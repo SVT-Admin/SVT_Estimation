@@ -351,9 +351,9 @@ function createBillElement(bill) {
                         <thead>
                             <tr>
                                 <th>No.</th>
-                                <th>Brand</th>
-                                <th>Product</th>
+                                <th>Brand/Product</th>
                                 <th>Quantity (KG)</th>
+                                <th>Units</th>
                                 <th>Price/KG</th>
                                 <th>Total</th>
                             </tr>
@@ -362,9 +362,9 @@ function createBillElement(bill) {
                             ${bill.items.map((item, index) => `
                                 <tr>
                                     <td>${index + 1}</td>
-                                    <td>${item.brandName || 'N/A'}</td>
-                                    <td>${item.productName}</td>
+                                    <td>${item.brandName}-${item.productName}</td>
                                     <td>${item.quantity}</td>
+                                    <td>${item.units}</td>
                                     <td>₹${item.price.toFixed(2)}</td>
                                     <td>₹${(item.quantity * item.price).toFixed(2)}</td>
                                 </tr>
