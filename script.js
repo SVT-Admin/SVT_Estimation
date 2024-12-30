@@ -273,7 +273,7 @@ function validateCustomerInfo() {
 let currentBillItems = [];
 
 function addProductToBill() {
-    let brandName, productName;
+    let brandName, productName, brandId;
     const quantity = parseFloat(document.getElementById('billing-quantity').value);
     const units = parseFloat(document.getElementById('billing-units').value);
     const price = parseFloat(document.getElementById('billing-manual-price').value);
@@ -283,28 +283,59 @@ function addProductToBill() {
         return;
     }
 
+    // Handle brand selection/entry
     if (isManualBrand) {
         brandName = document.getElementById('billing-brand-manual').value.trim();
         if (!brandName) {
             alert('Please enter a brand name');
             return;
         }
+        // Save new brand if it doesn't exist
+        const brands = JSON.parse(localStorage.getItem('brands')) || [];
+        let brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+        if (!brand) {
+            brand = {
+                id: Date.now(),
+                name: brandName,
+                description: ''
+            };
+            brands.push(brand);
+            localStorage.setItem('brands', JSON.stringify(brands));
+        }
+        brandId = brand.id;
     } else {
         const brandSelect = document.getElementById('billing-brand');
         if (!brandSelect.value) {
             alert('Please select a brand');
             return;
         }
+        brandId = brandSelect.value;
         const brands = JSON.parse(localStorage.getItem('brands'));
-        const brand = brands.find(b => b.id == brandSelect.value);
+        const brand = brands.find(b => b.id == brandId);
         brandName = brand.name;
     }
 
+    // Handle product selection/entry
     if (isManualProduct) {
         productName = document.getElementById('billing-product-manual').value.trim();
         if (!productName) {
             alert('Please enter product name');
             return;
+        }
+        // Save new product if it doesn't exist
+        const products = JSON.parse(localStorage.getItem('products')) || [];
+        let product = products.find(p => 
+            p.brandId == brandId && 
+            p.name.toLowerCase() === productName.toLowerCase()
+        );
+        if (!product) {
+            product = {
+                id: Date.now(),
+                brandId: brandId,
+                name: productName
+            };
+            products.push(product);
+            localStorage.setItem('products', JSON.stringify(products));
         }
     } else {
         const productSelect = document.getElementById('billing-product');
@@ -328,6 +359,8 @@ function addProductToBill() {
 
     currentBillItems.push(billItem);
     updateBillItemsTable();
+    loadBrandsList();
+    updateProductList();
 
     // Clear inputs
     document.getElementById('billing-quantity').value = '';
