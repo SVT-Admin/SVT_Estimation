@@ -678,45 +678,45 @@ function generateProfessionalBillPDF(bill) {
             <thead>
                 <tr style="background-color: #ffffff;">
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">S.No</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: left;">Brand</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: left;">Product</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Brand</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Product</th>
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Quantity (KG)</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: right;">Price/KG</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: right;">Amount</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Price/KG</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Amount</th>
                 </tr>
             </thead>
             <tbody>
                 ${bill.items.map((item, index) => `
                     <tr>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${index + 1}</td>
-                        <td style="border: 1px solid #000000; padding: 1px;">${item.brandName}</td>
-                        <td style="border: 1px solid #000000; padding: 1px;">${item.productName}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.brandName}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.productName}</td>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.quantity}</td>
-                        <td style="border: 1px solid #000000; padding: 1px; text-align: right;">₹${item.price.toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 1px; text-align: right;">₹${(item.quantity * item.price).toFixed(2)}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">₹${item.price.toFixed(2)}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
                     </tr>
                 `).join('')}
             </tbody>
         </table>
 
         <!-- Bill Summary -->
-        <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 10px; font-size: 14px;">
+        <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 15px; font-size: 14px;">
             <table style="width: 300px; border-collapse: collapse;">
                 <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Sub Total:</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Sub Total</strong></td>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${bill.subtotal.toFixed(2)}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Transport Charges:</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Transport Charges</strong></td>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${(bill.transportCharges || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
-                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Extra Charges:</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Extra Charges</strong></td>
                     <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;">₹${(bill.extraCharges || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
-                    <td style="border: 3px solid #000000; text-align: center; padding: 2px 0;"><strong>Total Amount:</strong></td>
-                    <td style="border: 3px solid #000000; text-align: center; padding: 2px 0;"><strong>₹${bill.totalAmount.toFixed(2)}</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>Total Amount</strong></td>
+                    <td style="border: 1px solid #000000; text-align: center; padding: 2px 0;"><strong>₹${bill.totalAmount.toFixed(2)}</strong></td>
                 </tr>
             </table>
         </div>
@@ -726,9 +726,7 @@ function generateProfessionalBillPDF(bill) {
             <div style="float: left; width: 50%;">
                 <p><strong>Terms & Conditions:</strong></p>
                 <ol style="margin: 5px 0; padding-left: 20px; font-size: 12px;">
-                    <li>Goods once sold will not be taken back</li>
-                    <li>Subject to local jurisdiction</li>
-                    <li>E. & O.E.</li>
+                    <li>No invoice Estimate only</li>
                 </ol>
             </div>
             <div style="float: right; width: 200px; text-align: center;">
@@ -759,7 +757,8 @@ function generateProfessionalBillPDF(bill) {
             unit: 'mm', 
             format: 'a4', 
             orientation: 'portrait'
-        }
+        },
+        margin: [10, 0, 10, 0]
     };
 
     // Generate PDF
