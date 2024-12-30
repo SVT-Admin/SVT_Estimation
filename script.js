@@ -275,9 +275,10 @@ let currentBillItems = [];
 function addProductToBill() {
     let brandName, productName;
     const quantity = parseFloat(document.getElementById('billing-quantity').value);
+    const units = parseFloat(document.getElementById('billing-units').value);
     const price = parseFloat(document.getElementById('billing-manual-price').value);
 
-    if (!quantity || quantity <= 0 || !price || price <= 0) {
+    if (!quantity || quantity <= 0 || !price || price <= 0 || !units || units <= 0) {
         alert('Please enter valid quantity and price');
         return;
     }
@@ -321,8 +322,8 @@ function addProductToBill() {
         brandName: brandName,
         productName: productName,
         quantity: quantity,
-        price: price,
-        tax: 0
+        units: units,
+        price: price
     };
 
     currentBillItems.push(billItem);
@@ -347,7 +348,6 @@ function updateProductPrice() {
     const products = JSON.parse(localStorage.getItem('products'));
     const product = products.find(p => p.id == productId);
     if (product) {
-        // You could display the price somewhere in the UI if needed
         console.log(`Selected product price: ₹${product.price}`);
     }
 }
@@ -365,6 +365,7 @@ function updateBillItemsTable() {
         row.innerHTML = `
             <td style="text-align: center;"><strong>${item.brandName}</strong> - ${item.productName}</td>
             <td style="text-align: center;">${item.quantity} KG</td>
+            <td style="text-align: center;">${item.units}</td>
             <td style="text-align: center;">₹${item.price.toFixed(2)}</td>
             <td style="text-align: center;">₹${itemTotal.toFixed(2)}</td>
             <td style="text-align: center;">
@@ -678,9 +679,9 @@ function generateProfessionalBillPDF(bill) {
             <thead>
                 <tr style="background-color: #ffffff;">
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">S.No</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Brand</th>
-                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Product</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Brand/Product</th>
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Quantity (KG)</th>
+                    <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Units</th>
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Price/KG</th>
                     <th style="border: 1px solid #000000; padding: 3px; text-align: center;">Amount</th>
                 </tr>
@@ -689,9 +690,9 @@ function generateProfessionalBillPDF(bill) {
                 ${bill.items.map((item, index) => `
                     <tr>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${index + 1}</td>
-                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.brandName}</td>
-                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.productName}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.brandName}-${item.productName}</td>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.quantity}</td>
+                        <td style="border: 1px solid #000000; padding: 1px; text-align: center;">${item.units}</td>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">₹${item.price.toFixed(2)}</td>
                         <td style="border: 1px solid #000000; padding: 1px; text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
                     </tr>
@@ -789,6 +790,7 @@ function showBillDetails(bill) {
         `<tr>
             <td style="text-align: center;">${item.brandName} - ${item.productName}</td>
             <td style="text-align: center;">${item.quantity} KG</td>
+            <td style="text-align: center;">${item.units}</td>
             <td style="text-align: center;">₹${item.price.toFixed(2)}</td>
             <td style="text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
         </tr>`
@@ -818,6 +820,7 @@ function showBillDetails(bill) {
                     <tr>
                         <th style="text-align: center;">Brand/Product</th>
                         <th style="text-align: center;">Quantity</th>
+                        <th style="text-align: center;">Units</th>
                         <th style="text-align: center;">Price/KG</th>
                         <th style="text-align: center;">Total</th>
                     </tr>
@@ -827,19 +830,19 @@ function showBillDetails(bill) {
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
+                        <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
                         <td style="text-align: center;"><b>₹${bill.subtotal.toFixed(2)}</b></td>
                     </tr>
                     <tr>
-                        <td colspan="3" style="text-align: right;"><strong>Transport Charges:</strong></td>
+                        <td colspan="4" style="text-align: right;"><strong>Transport Charges:</strong></td>
                         <td style="text-align: center;"><b>₹${(bill.transportCharges || 0).toFixed(2)}</b></td>
                     </tr>
                     <tr>
-                        <td colspan="3" style="text-align: right;"><strong>Extra Charges:</strong></td>
+                        <td colspan="4" style="text-align: right;"><strong>Extra Charges:</strong></td>
                         <td style="text-align: center;"><b>₹${(bill.extraCharges || 0).toFixed(2)}</b></td>
                     </tr>
                     <tr class="total-amount">
-                        <td colspan="3" style="text-align: right;"><strong>Total Amount:</strong></td>
+                        <td colspan="4" style="text-align: right;"><strong>Total Amount:</strong></td>
                         <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
                     </tr>
                 </tfoot>
