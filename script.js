@@ -638,10 +638,10 @@ function generateProfessionalBillPDF(bill) {
         <!-- Header Section -->
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="font-size: 24px; margin: 0; font-weight: bold; color: #000;">SRI VINAYAGA TRADERS</h1>
-            <p style="margin: 2px 0; font-size: 14px;">123 Main Street, First Floor</p>
-            <p style="margin: 2px 0; font-size: 14px;">City Name, State - PIN Code</p>
-            <p style="margin: 2px 0; font-size: 14px;">Phone: +91 1234567890, +91 9876543210</p>
-            <p style="margin: 2px 0; font-size: 14px;">Email: info@srivinayagatraders.com</p>
+            <p style="margin: 0px 0; font-size: 14px;">No. 64/3D, Sriperumbudur Main Road</p>
+            <p style="margin: 0px 0; font-size: 14px;">Pudupper Village, Chennai-600069</p>
+            <p style="margin: 0px 0; font-size: 14px;">Phone: +91 9710631234, +91 9710651234</p>
+            <p style="margin: 0px 0; font-size: 14px;">Email: srivinayagatraders1982@gmail.com</p>
         </div>
 
         <h1 STYLE="font-size: 24px; text-align: center;">ESTIMATE</h1>
@@ -787,7 +787,7 @@ function showBillDetails(bill) {
 
     const itemsList = bill.items.map(item =>
         `<tr>
-            <td style="text-align: center;">${item.productName}</td>
+            <td style="text-align: center;">${item.brandName} - ${item.productName}</td>
             <td style="text-align: center;">${item.quantity} KG</td>
             <td style="text-align: center;">₹${item.price.toFixed(2)}</td>
             <td style="text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
@@ -816,7 +816,7 @@ function showBillDetails(bill) {
             <table style="width: 100%; margin-top: 10px;">
                 <thead>
                     <tr>
-                        <th style="text-align: center;">Product</th>
+                        <th style="text-align: center;">Brand/Product</th>
                         <th style="text-align: center;">Quantity</th>
                         <th style="text-align: center;">Price/KG</th>
                         <th style="text-align: center;">Total</th>
@@ -971,7 +971,7 @@ function generateReport() {
                     `<span class="cancelled-date">Cancelled on ${new Date(bill.cancellationDate).toLocaleDateString()}</span>`
                 }
                 <button class="btn btn-primary" onclick="generateProfessionalBillPDF(${JSON.stringify(bill).replace(/"/g, '&quot;')})">
-                    <i class="icon">📄</i> Download Bill
+                    Download
                 </button>
             </td>
         `;
