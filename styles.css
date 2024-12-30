@@ -1,0 +1,483 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 33px;
+    letter-spacing: 1px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-bottom: 15px;
+}
+
+nav button {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px;
+    margin: 5px;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-radius: 5px;
+}
+
+nav button:hover {
+    background-color: #555;
+}
+
+/* Enhanced Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.1s;
+    gap: 5px;
+}
+
+.btn .icon {
+    margin-right: 5px;
+}
+
+.btn-primary {
+    background-color: #333;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #333;
+}
+
+.btn-success {
+    background-color: #333;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #333;
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+/* Add these styles to styles.css */
+
+.cancelled-bill {
+    background-color: #fff5f5;
+}
+
+.cancelled-bill td {
+    color: #666;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background-color: #e6f4ea;
+    color: #1e7e34;
+}
+
+.status-badge.cancelled {
+    background-color: #ffeef0;
+    color: #dc3545;
+}
+
+.cancelled-date {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+.status-container {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.cancelled-info {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+}
+
+.section {
+    background-color: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.form-group input, 
+.form-group select,
+.report-filters input,
+.report-filters select {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 100px;
+}
+
+.report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.report-filters button {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.staff-details, .customer-details {
+    background-color: #f9f9f9; /* Light gray background for better readability */
+    border: 1px solid #ddd; /* Subtle border to separate sections */
+    border-radius: 5px; /* Rounded corners for a modern look */
+    padding: 15px; /* Spacing inside the box */
+    margin-bottom: 15px; /* Space between sections */
+}
+
+.staff-details h4, .customer-details h4 {
+    margin-bottom: 10px; /* Space below the heading */
+    font-size: 16px; /* Heading size */
+    font-weight: bold; /* Emphasize headings */
+    color: #333; /* Darker text color for headings */
+    border-bottom: 1px solid #ddd; /* Underline effect for headings */
+    padding-bottom: 5px; /* Padding below the heading text */
+}
+
+.staff-details p, .customer-details p {
+    margin: 5px 0; /* Space between lines */
+    font-size: 14px; /* Text size for details */
+    color: #555; /* Slightly muted text color */
+}
+
+.staff-details p strong, .customer-details p strong {
+    color: #333; /* Darker color for emphasized text */
+}
+
+.bill-summary {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.today-summary {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.today-summary h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 18px;
+}
+
+.today-summary p {
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+/* Mobile Specific Adjustments */
+@media screen and (max-width: 600px) {
+    .container {
+        padding: 5px;
+    }
+
+    nav button {
+        font-size: 14px;
+        padding: 8px;
+    }
+
+    .form-group {
+        flex-direction: column;
+    }
+
+    .form-group input, 
+    .form-group select,
+    .report-filters input,
+    .report-filters select {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 5px;
+    }
+
+    .today-summary {
+        padding: 10px;
+    }
+
+    .today-summary h3 {
+        font-size: 16px;
+    }
+
+    .today-summary p {
+        flex-direction: column;
+        font-size: 12px;
+    }
+}
+
+/* Buttons and Interactive Elements */
+button {
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* Scrollable tables on small screens */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.tax-calculation {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.tax-calculation .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tax-calculation label {
+    min-width: 60px;
+    font-weight: bold;
+}
+
+.tax-calculation input {
+    width: 120px;
+}
+
+.bill-summary {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.bill-summary p {
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.total-amount {
+    font-size: 1.2em;
+    color: #333;
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex: 1;
+}
+
+.input-group select,
+.input-group input {
+    flex: 1;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+@media screen and (max-width: 768px) {
+    .input-group {
+        flex-direction: column;
+    }
+    
+    .input-group select,
+    .input-group input,
+    .input-group button {
+        width: 100%;
+    }
+}
+
+.customer-info-section {
+    background-color: #f8f8f8;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.customer-info-section textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.charges-form {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+/* Form Group Styling */
+.charges-form .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Label Styling */
+.charges-form .form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+/* Input Field Styling */
+.charges-form .form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px; /* Larger font size for better mobile tapping */
+    width: 100%;
+    background: #fff;
+}
+
+/* Focus state for inputs */
+.charges-form .form-group input:focus {
+    outline: none;
+    border-color: #333;
+    box-shadow: 0 0 0 2px rgba(51,51,51,0.1);
+}
+
+/* Mobile-specific adjustments */
+@media screen and (max-width: 600px) {
+    .charges-form {
+        padding: 10px;
+        margin: 8px 0;
+    }
+
+    .charges-form .form-group {
+        padding: 6px;
+    }
+
+    /* Increase tap target size on mobile */
+    .charges-form .form-group input {
+        height: 44px;
+        font-size: 16px;
+    }
+}

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sri Vinayaga Traders - Product Management and Billing System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>SRI VINAYAGA TRADERS</h1>
+    </header>
+    <div class="container">
+        <nav>
+            <button onclick="showSection('products')">Products</button>
+            <button onclick="showSection('billing')">Estimation</button>
+            <button onclick="showSection('reports')">Reports</button>
+            <button onclick="window.location.href='admin.html'">Admin</button>
+        </nav>
+
+        <!-- Products Section -->
+        <section id="products-section" class="section">
+            <h1 style="text-align: center; padding-bottom: 10px;">PRODUCTS MANAGEMENT</h1>
+            
+            <!-- Brand Management -->
+            <div class="form-group">
+                <input type="text" id="brand-name" placeholder="Brand Name" required>
+                <input type="text" id="brand-description" placeholder="Description">
+                <button class="btn btn-primary" onclick="addBrand()">
+                    <i class="icon">+</i> Add Brand
+                </button>
+            </div>
+
+            <!-- Product Management -->
+            <div class="form-group">
+                <select id="product-brand" onchange="filterProductsByBrand()" required>
+                    <option value="">Select Brand</option>
+                </select>
+                <input type="text" id="product-name" placeholder="Product Name" required>
+                <button class="btn btn-primary" onclick="addProduct()">
+                    <i class="icon">+</i> Add Product
+                </button>
+            </div>
+
+            <!-- Product List -->
+            <div class="table-responsive">
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Brand</th>
+                            <th style="text-align: center;">Product</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body">
+                        <!-- Products will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Billing Section Remains the Same -->
+        <section id="billing-section" class="section" style="display:block;">
+            <h1 style="text-align: center; padding-bottom: 10px;">ESTIMATION</h1>
+
+            <div class="form-group">
+                <select id="staff-select" required>
+                    <option value="">Select Staff</option>
+                </select>
+            </div>            
+
+            <div class="customer-info-section">
+                <h3>Customer Information</h3>
+                <div class="form-group">
+                    <input type="text" id="customer-name" placeholder="Customer Name" required>
+                    <input type="tel" id="customer-mobile" placeholder="Mobile Number" pattern="[0-9]{10}" required>
+                    <textarea id="customer-address" placeholder="Address" rows="2" required></textarea>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="input-group">
+                    <select id="billing-brand" onchange="updateProductList()">
+                        <option value="">Select Brand</option>
+                    </select>
+                    <input type="text" id="billing-brand-manual" placeholder="Brand" style="display: none;">
+                    <button class="btn btn-secondary" id="toggle-brand-input" onclick="toggleBrandInput()">
+                        <i class="icon">✎</i>
+                    </button>
+                </div>
+            
+                <div class="input-group">
+                    <select id="billing-product" onchange="updateProductPrice()">
+                        <option value="">Select Product</option>
+                    </select>
+                    <input type="text" id="billing-product-manual" placeholder="Product" style="display: none;">
+                    <button class="btn btn-secondary" id="toggle-product-input" onclick="toggleProductInput()">
+                        <i class="icon">✎</i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="number" id="billing-quantity" placeholder="Quantity" required>
+                <input type="number" id="billing-units" placeholder="Units" required>
+                <input type="number" id="billing-manual-price" placeholder="Price per kg/Unit" required>
+                <button class="btn btn-primary" onclick="addProductToBill()">
+                    <i class="icon">+</i> Add to Bill
+                </button>
+            </div>
+
+            <!-- Bill Items Table -->
+            <div class="table-responsive">
+                <table id="bill-items-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Brand / Product</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: center;">Price</th>
+                            <th style="text-align: center;">Total</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bill-items-body">
+                        <!-- Bill items will be dynamically added -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="bill-summary">
+                <div class="form-group">
+                    <input type="number" id="transport-charges" placeholder="Enter Transport Charges" step="50" onchange="updateBillTotals()" required>
+                </div>                  
+                <div class="form-group">
+                    <input type="number" id="extra-charges" placeholder="Enter Extra Charges" step="11" onchange="updateBillTotals()" required>
+                </div>
+                <p>Subtotal: ₹<span id="bill-subtotal">0.00</span></p>
+                <p>Transport Charges: ₹<span id="transport-amount">0.00</span></p>
+                <p>Extra Charges: ₹<span id="extra-amount">0.00</span></p>
+                <p class="total-amount">Grand Total: ₹<span id="bill-total-amount">0.00</span></p>
+                <button class="btn btn-success" onclick="generateBill()">
+                    <i class="icon">✓</i> Estimate
+                </button>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports-section" class="section" style="display:none;">
+            <h1 style="text-align: center; padding-bottom: 10px;">REPORTS</h1>
+            
+            <div id="today-summary" class="today-summary">
+                <!-- Today's summary will be dynamically populated -->
+            </div>
+
+            <div class="report-filters">
+                <select id="report-type">
+                    <option value="daily">Daily Report</option>
+                    <option value="weekly">Weekly Report</option>
+                    <option value="monthly">Monthly Report</option>
+                    <option value="custom">Custom Date Range</option>
+                </select>
+
+                <input type="date" id="start-date">
+                <input type="date" id="end-date">
+                <button class="btn btn-primary" onclick="generateReport()">
+                    <i class="icon">📊</i> Generate Report
+                </button>
+            </div>
+
+            <!-- Report Table -->
+            <div class="table-responsive">
+                <table id="report-table">
+                    <thead>
+                        <tr>
+                            <!-- -->
+                        </tr>
+                    </thead>
+                    <tbody id="report-table-body">
+                        <!-- Report data will be dynamically added -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+<script src="script.js"></script>
+</body>
+</html>
