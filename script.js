@@ -435,8 +435,8 @@ function formatBillDetailsForTelegram(bill) {
     const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
     const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString();
 
-    let message = `🧾 *NEW BILL GENERATED*\n\n`;
-    message += `Bill No: *${bill.billNumber}*\n`;
+    let message = `🧾 *NEW ESTIMATE GENERATED*\n\n`;
+    message += `Estimate No: *${bill.billNumber}*\n`;
     message += `Date: ${formatDate(bill.date)}\n`;
     message += `Time: ${formatTime(bill.date)}\n\n`;
 
@@ -459,7 +459,7 @@ function formatBillDetailsForTelegram(bill) {
     });
 
     // Bill Summary
-    message += `\n*BILL SUMMARY*\n`;
+    message += `\n*ESTIMATE SUMMARY*\n`;
     message += `Subtotal: ₹${bill.subtotal.toFixed(2)}\n`;
     if (bill.transportCharges) message += `Transport: ₹${bill.transportCharges.toFixed(2)}\n`;
     if (bill.extraCharges) message += `Extra Charges: ₹${bill.extraCharges.toFixed(2)}\n`;
@@ -655,8 +655,8 @@ function cancelBill(billId) {
         bills[billIndex].cancellationDate = new Date().toISOString();
         localStorage.setItem('bills', JSON.stringify(bills));
 
-        const cancelMessage = `❌ *BILL CANCELLED*\n\n` +
-            `Bill No: *${bills[billIndex].billNumber}*\n` +
+        const cancelMessage = `❌ *ESTIMATE CANCELLED*\n\n` +
+            `Estimate No: *${bills[billIndex].billNumber}*\n` +
             `Customer: ${bills[billIndex].customer.name}\n` +
             `Amount: ₹${bills[billIndex].totalAmount.toFixed(2)}\n` +
             `Cancelled on: ${new Date().toLocaleString()}`;
