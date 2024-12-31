@@ -639,7 +639,7 @@ function generateBill() {
     document.getElementById('extra-charges').value = '';
 
     updateBillItemsTable();
-    alert(`Bill #${billNumber} Generated Successfully!`);
+    alert(`Estimate No. ${billNumber} Generated Successfully!`);
 }
 
 function cancelBill(billId) {
