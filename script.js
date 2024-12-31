@@ -843,7 +843,7 @@ function showBillDetails(bill) {
 
     const detailsHTML = `
         <div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
-            <h3>Bill Details: #${bill.billNumber}</h3>
+            <h3>Estimate No.: ${bill.billNumber}</h3>
             <p>Date: ${new Date(bill.date).toLocaleString()}</p>
             ${statusInfo}
             ${customerInfo}
@@ -935,7 +935,7 @@ function generateReport() {
 
     document.getElementById('today-summary').innerHTML = `
         <h3>Today's Summary (${new Date().toLocaleDateString()})</h3>
-        <p>Total Active Bills: ${todayTotals.billCount}</p>
+        <p>Total Active Estimates: ${todayTotals.billCount}</p>
         <p>Subtotal: ₹${todayTotals.subtotal.toFixed(2)}</p>
         <p>Transport Charges: ₹${(todayTotals.transportCharges || 0).toFixed(2)}</p>
         <p>Extra Charges: ₹${(todayTotals.extraCharges || 0).toFixed(2)}</p>
