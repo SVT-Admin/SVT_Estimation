@@ -315,7 +315,7 @@ function createBillElement(bill) {
             <div class="bill-details-content">
                 <div class="bill-header-details" style="background-color: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <h3 style="margin: 0; color: #333;">Bill #${bill.billNumber}</h3>
+                        <h3 style="margin: 0; color: #333;">Estimate No: ${bill.billNumber}</h3>
                     </div>
                     <div style="text-align: right;">
                         <p style="margin: 0;"><strong>Date:</strong> ${dateStr}</p>
