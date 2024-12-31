@@ -342,7 +342,7 @@
     <div id="admin-section" class="admin-container container">
         <nav>
             <button onclick="showSection('data-management')">Data Management</button>
-            <button onclick="showSection('bill-records')">Bill Records</button>
+            <button onclick="showSection('bill-records')">Estimate Records</button>
             <button onclick="showSection('staff-management')">Staff Management</button>
             <button onclick="logout()">Logout</button>
         </nav>
@@ -357,16 +357,16 @@
                         <button class="btn btn-primary" onclick="restoreData()">Restore from Backup</button>
                     </div>
                     <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
-                    <button class="btn btn-primary" onclick="resetBillNumber()">Reset Bill Number</button>
+                    <button class="btn btn-primary" onclick="resetBillNumber()">Reset Estimate Number</button>
                 </div>
             </div>
         </div>
         
         <div id="bill-records-section" class="section" style="display: block;">
-            <h2>Bill Records</h2>
+            <h2>Estimation Records</h2>
             <div class="search-filters">
                 <input type="date" id="filter-date" placeholder="Filter by Date">
-                <input type="number" id="filter-billnumber" placeholder="Search Bill Number">
+                <input type="number" id="filter-billnumber" placeholder="Search Estimate Number">
                 <select id="filter-amount">
                     <option value="">Filter by Amount</option>
                     <option value="0-1000">₹0 - ₹1,000</option>
@@ -380,7 +380,7 @@
                 <table class="bills-table">
                     <thead>
                         <tr>
-                            <th>Bill No</th>
+                            <th>Estimate No</th>
                             <th>Staff</th>
                             <th>Total Amount</th>
                             <th>Status</th>
