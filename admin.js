@@ -81,10 +81,10 @@ function loadStaffList() {
             <td>${member.role}</td>
             <td>
                 <button class="btn btn-primary" onclick="editStaff(${member.id})">
-                    <i class="icon">✎</i> Edit
+                    <i class="icon">✎</i>
                 </button>
                 <button class="btn btn-danger" onclick="deleteStaff(${member.id})">
-                    <i class="icon">×</i> Delete
+                    <i class="icon">×</i>
                 </button>
             </td>
         `;
