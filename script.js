@@ -502,7 +502,6 @@ function showNotification(message, type = 'error') {
 async function sendTelegramMessage(message) {
     if (!checkNetworkStatus()) {
         showNotification('Network Error: Please check your internet connection');
-        // Store message for retry
         const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
         pendingMessages.push(message);
         localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
@@ -639,6 +638,33 @@ function generateBill() {
     document.getElementById('extra-charges').value = '';
 
     updateBillItemsTable();
+
+    const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
+    const chatId = '-4708859747';
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
+
+    const backup = {
+        brands: JSON.parse(localStorage.getItem('brands')) || [],
+        products: JSON.parse(localStorage.getItem('products')) || [],
+        bills: JSON.parse(localStorage.getItem('bills')) || [],
+        staff: JSON.parse(localStorage.getItem('staff')) || [],
+        currentBillNumber: parseInt(localStorage.getItem('currentBillNumber')) || 1,
+        timestamp: new Date().toISOString(),
+        version: '1.0',
+    };
+
+    const backupString = JSON.stringify(backup, null, 2);
+    const backupFile = new Blob([backupString], { type: 'application/json' });
+
+    const formData = new FormData();
+    formData.append('chat_id', chatId);
+    formData.append('document', backupFile, `backup-${new Date().toISOString().split('T')[0]}.json`);
+
+    fetch(telegramApiUrl, {
+        method: 'POST',
+        body: formData,
+    });
+
     alert(`Estimate No. ${billNumber} Generated Successfully!`);
 }
 
