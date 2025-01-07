@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = "123";
+const ADMIN_PASSWORD = "SVT25$1982";
 
 window.onload = function() {
     const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
@@ -81,10 +81,10 @@ function loadStaffList() {
             <td>${member.role}</td>
             <td>
                 <button class="btn btn-primary" onclick="editStaff(${member.id})">
-                    <i class="icon">✎</i>
+                    <i class="icon">✎</i> Edit
                 </button>
                 <button class="btn btn-danger" onclick="deleteStaff(${member.id})">
-                    <i class="icon">×</i>
+                    <i class="icon">×</i> Delete
                 </button>
             </td>
         `;
@@ -147,10 +147,6 @@ function updateStaff(staffId) {
 
 // Delete staff
 function deleteStaff(staffId) {
-    if (!confirm('Are you sure you want to delete this staff member?')) {
-        return;
-    }
-
     const staff = JSON.parse(localStorage.getItem('staff')) || [];
     const filteredStaff = staff.filter(s => s.id !== staffId);
     localStorage.setItem('staff', JSON.stringify(filteredStaff));
@@ -158,10 +154,8 @@ function deleteStaff(staffId) {
 }
 
 function resetBillNumber() {
-    if (confirm('Are you sure you want to reset the bill number to 1? This action cannot be undone!')) {
-        localStorage.setItem('currentBillNumber', '1');
-        alert('Bill number has been reset to 1');
-    }
+    localStorage.setItem('currentBillNumber', '1');
+    alert('Bill number has been reset to 1');
 }
 
 
@@ -414,10 +408,6 @@ function createBillElement(bill) {
 }
 
 function cancelBill(billId) {
-    if (!confirm('Are you sure you want to cancel this bill?')) {
-        return;
-    }
-
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     const billIndex = bills.findIndex(b => b.id === billId);
     
@@ -425,7 +415,7 @@ function cancelBill(billId) {
         bills[billIndex].status = 'CANCELLED';
         bills[billIndex].cancellationDate = new Date().toISOString();
         localStorage.setItem('bills', JSON.stringify(bills));
-        loadBills(); // Refresh the bills list
+        loadBills();
     }
 }
 
@@ -540,16 +530,16 @@ async function restoreData() {
         if (!backup.version || !backup.timestamp || !backup.brands || !backup.products || !backup.bills || !backup.staff) {
             throw new Error('Invalid backup file format.');
         }
-        if (confirm('This will replace all current data. Are you sure you want to proceed?')) {
-            localStorage.setItem('brands', JSON.stringify(backup.brands));
-            localStorage.setItem('products', JSON.stringify(backup.products));
-            localStorage.setItem('bills', JSON.stringify(backup.bills));
-            localStorage.setItem('staff', JSON.stringify(backup.staff));
-            localStorage.setItem('currentBillNumber', backup.currentBillNumber.toString());
 
-            alert('Data restored successfully! The page will now reload.');
-            window.location.reload();
-        }
+        localStorage.setItem('brands', JSON.stringify(backup.brands));
+        localStorage.setItem('products', JSON.stringify(backup.products));
+        localStorage.setItem('bills', JSON.stringify(backup.bills));
+        localStorage.setItem('staff', JSON.stringify(backup.staff));
+        localStorage.setItem('currentBillNumber', backup.currentBillNumber.toString());
+
+        alert('Data restored successfully! The page will now reload.');
+        window.location.reload();
+        
     } catch (error) {
         console.error('Error restoring data:', error);
         alert('Failed to restore data. Please ensure the backup file is valid and accessible.');
@@ -558,10 +548,6 @@ async function restoreData() {
 
 // Improved clear data function
 function clearAllData() {
-    if (!confirm('Are you sure you want to clear all data? This action cannot be undone!')) {
-        return;
-    }
-
     try {
         // Backup current data before clearing
         const backupBeforeClear = {
