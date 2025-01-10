@@ -376,9 +376,6 @@ function updateProductPrice() {
 
     const products = JSON.parse(localStorage.getItem('products'));
     const product = products.find(p => p.id == productId);
-    if (product) {
-        console.log(`Selected product price: ₹${product.price}`);
-    }
 }
 
 function updateBillItemsTable() {
@@ -807,6 +804,7 @@ function generateProfessionalBillPDF(bill) {
                 <ol style="margin: 5px 0; padding-left: 20px; font-size: 12px;">
                     <li>This item is not for sale.</li>
                     <li>The price is for estimation purpose only.</li>
+                    <li>18% GST included.</li>
                 </ol>
             </div>
             <div style="float: right; width: 200px; text-align: center;">
