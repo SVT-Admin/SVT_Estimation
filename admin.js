@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = "SVT25$1982";
+const ADMIN_PASSWORD = "123";
 
 window.onload = function() {
     const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
