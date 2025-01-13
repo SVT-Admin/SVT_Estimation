@@ -88,42 +88,22 @@ function toggleProductInput() {
     manualPrice.value = '';
 }
 
-// Brand Management
 function addBrand() {
     try {
-        // Get the input values
         const brandName = document.getElementById('brand-name').value.trim();
-        const brandDescription = document.getElementById('brand-description').value.trim();
-
-        // Validate inputs
         if (!brandName) {
             alert('Please enter a brand name.');
             return;
         }
-
-        // Fetch the existing brands from localStorage or initialize an empty array
         const brands = JSON.parse(localStorage.getItem('brands')) || [];
-
-        // Create a new brand object
         const newBrand = {
-            id: Date.now(), // Unique ID based on timestamp
-            name: brandName,
-            description: brandDescription || ''
+            id: Date.now(),
+            name: brandName
         };
-
-        // Add the new brand to the list
         brands.push(newBrand);
-
-        // Save the updated brands list to localStorage
         localStorage.setItem('brands', JSON.stringify(brands));
-
-        // Clear the input fields
         document.getElementById('brand-name').value = '';
-        document.getElementById('brand-description').value = '';
-
-        // Refresh the brand list
         loadBrandsList();
-
         alert('Brand added successfully!');
     } catch (error) {
         console.error('Error adding brand:', error);
@@ -131,7 +111,6 @@ function addBrand() {
     }
 }
 
-// Product Management
 function addProduct() {
     const brandSelect = document.getElementById('product-brand');
     const productName = document.getElementById('product-name').value.trim();
@@ -524,12 +503,18 @@ async function sendTelegramMessage(message) {
 
 window.addEventListener('online', () => {
     showNotification('Network connection restored', 'success');
-    retryPendingMessages();
+    processNetworkQueue();
 });
 
 window.addEventListener('offline', () => {
     showNotification('Network connection lost');
 });
+
+setInterval(() => {
+    if (checkNetworkStatus()) {
+        processNetworkQueue();
+    }
+}, 300000);
 
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
@@ -567,6 +552,19 @@ async function retryPendingMessages() {
     if (successfulMessages.length > 0) {
         showNotification(`Successfully sent ${successfulMessages.length} pending messages`, 'success');
     }
+}
+
+function storePendingNotification(billData, messageType = 'new') {
+    const pendingNotifications = JSON.parse(localStorage.getItem('pendingNotifications') || '[]');
+    pendingNotifications.push({
+        id: Date.now(),
+        billData: billData,
+        messageType: messageType, // 'new' for new bills, 'cancel' for cancellations
+        timestamp: new Date().toISOString(),
+        attempts: 0,
+        lastAttempt: null
+    });
+    localStorage.setItem('pendingNotifications', JSON.stringify(pendingNotifications));
 }
 
 function generateBill() {
@@ -619,7 +617,12 @@ function generateBill() {
 
     // Send bill details to Telegram
     const telegramMessage = formatBillDetailsForTelegram(bill);
-    sendTelegramMessage(telegramMessage);
+    if (!checkNetworkStatus()) {
+        storePendingNotification(bill, 'new');
+        showNotification('Bill saved. Notification will be sent when online.');
+    } else {
+        sendTelegramMessage(telegramMessage);
+    }
 
     // Clear form
     currentBillItems = [];
@@ -661,6 +664,14 @@ function generateBill() {
     alert(`Estimate No. ${billNumber} Generated Successfully!`);
 }
 
+function formatCancellationMessage(bill) {
+    return `❌ *ESTIMATE CANCELLED*\n\n` +
+        `Estimate No: *${bill.billNumber}*\n` +
+        `Customer: ${bill.customer.name}\n` +
+        `Amount: ₹${bill.totalAmount.toFixed(2)}\n` +
+        `Cancelled on: ${new Date().toLocaleString()}`;
+}
+
 function cancelBill(billId) {
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     const billIndex = bills.findIndex(b => b.id === billId);
@@ -670,13 +681,14 @@ function cancelBill(billId) {
         bills[billIndex].cancellationDate = new Date().toISOString();
         localStorage.setItem('bills', JSON.stringify(bills));
 
-        const cancelMessage = `❌ *ESTIMATE CANCELLED*\n\n` +
-            `Estimate No: *${bills[billIndex].billNumber}*\n` +
-            `Customer: ${bills[billIndex].customer.name}\n` +
-            `Amount: ₹${bills[billIndex].totalAmount.toFixed(2)}\n` +
-            `Cancelled on: ${new Date().toLocaleString()}`;
+        const cancelMessage = formatCancellationMessage(bills[billIndex]);
 
-        sendTelegramMessage(encodeURIComponent(cancelMessage));
+        if (!checkNetworkStatus()) {
+            storePendingNotification(bills[billIndex], 'cancel');
+            showNotification('Cancellation saved. Notification will be sent when online.');
+        } else {
+            sendTelegramMessage(encodeURIComponent(cancelMessage));
+        }
 
         const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
         const chatId = '-4708859747';
@@ -705,6 +717,53 @@ function cancelBill(billId) {
         });
 
         generateReport();
+    }
+}
+
+async function processNetworkQueue() {
+    if (!checkNetworkStatus()) return;
+
+    const pendingNotifications = JSON.parse(localStorage.getItem('pendingNotifications') || '[]');
+    if (pendingNotifications.length === 0) return;
+
+    const successfulNotifications = [];
+    const maxAttempts = 3;
+
+    for (const notification of pendingNotifications) {
+        if (notification.attempts >= maxAttempts) {
+            continue;
+        }
+
+        let message;
+        if (notification.messageType === 'new') {
+            message = formatBillDetailsForTelegram(notification.billData);
+        } else if (notification.messageType === 'cancel') {
+            message = formatCancellationMessage(notification.billData);
+        }
+
+        try {
+            const success = await sendTelegramMessage(encodeURIComponent(message));
+            if (success) {
+                successfulNotifications.push(notification.id);
+                showNotification(`Successfully sent notification for bill #${notification.billData.billNumber}`, 'success');
+            } else {
+                notification.attempts += 1;
+                notification.lastAttempt = new Date().toISOString();
+            }
+        } catch (error) {
+            notification.attempts += 1;
+            notification.lastAttempt = new Date().toISOString();
+        }
+    }
+
+    // Remove successful notifications and update remaining ones
+    const remainingNotifications = pendingNotifications.filter(
+        notification => !successfulNotifications.includes(notification.id)
+    );
+    localStorage.setItem('pendingNotifications', JSON.stringify(remainingNotifications));
+
+    if (successfulNotifications.length > 0) {
+        showNotification(`Successfully sent ${successfulNotifications.length} pending notifications`, 'success');
     }
 }
 
@@ -1067,5 +1126,6 @@ function generateReport() {
 window.addEventListener('load', () => {
     loadBrandsList();
     loadProductsList('');
-    generateReport(); // Automatically generate report on load
+    generateReport();
+    processNetworkQueue();
 });
