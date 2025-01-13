@@ -111,6 +111,7 @@ function addBrand() {
     }
 }
 
+// Product Management
 function addProduct() {
     const brandSelect = document.getElementById('product-brand');
     const productName = document.getElementById('product-name').value.trim();
@@ -444,6 +445,50 @@ function checkNetworkStatus() {
     return navigator.onLine;
 }
 
+const PENDING_MESSAGES_KEY = 'pendingTelegramMessages';
+const LAST_RETRY_ATTEMPT_KEY = 'lastTelegramRetryAttempt';
+const BOT_TOKEN = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
+const CHAT_ID = '-1001979192306';
+const MIN_RETRY_INTERVAL = 60000;
+
+function createMessageObject(content, type, timestamp = Date.now(), attempts = 0) {
+    return {
+        id: `msg_${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
+        content,
+        type,
+        timestamp,
+        attempts,
+        lastAttempt: null
+    };
+}
+
+function savePendingMessage(messageObj) {
+    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
+    pending.push(messageObj);
+    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(pending));
+}
+
+function removePendingMessage(messageId) {
+    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
+    const updated = pending.filter(msg => msg.id !== messageId);
+    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(pending));
+}
+
+function updateMessageAttempt(messageId) {
+    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
+    const updated = pending.map(msg => {
+        if (msg.id === messageId) {
+            return {
+                ...msg,
+                attempts: msg.attempts + 1,
+                lastAttempt: Date.now()
+            };
+        }
+        return msg;
+    });
+    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(updated));
+}
+
 // Show notification message
 function showNotification(message, type = 'error') {
     const notification = document.createElement('div');
@@ -471,50 +516,60 @@ function showNotification(message, type = 'error') {
     }, 5000);
 }
 
-async function sendTelegramMessage(message) {
-    if (!checkNetworkStatus()) {
-        showNotification('Network Error: Please check your internet connection');
-        const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
-        pendingMessages.push(message);
-        localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+async function sendTelegramMessage(messageObj) {
+    if (!navigator.onLine) {
         return false;
     }
 
-    const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-    const chatId = '-1001979192306';
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=Markdown`;
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const params = {
+        chat_id: CHAT_ID,
+        text: messageObj.content,
+        parse_mode: 'Markdown'
+    };
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params)
+        });
+
         const data = await response.json();
-        if (!data.ok) {
-            throw new Error('Telegram API Error');
+        if (data.ok) {
+            return true;
         }
-        return true;
+        throw new Error('Telegram API Error');
     } catch (error) {
-        showNotification('Failed to send notification to Telegram. Will retry when connection is restored.');
-        // Store message for retry
-        const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
-        pendingMessages.push(message);
-        localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+        console.error('Failed to send message:', error);
         return false;
     }
 }
 
+async function queueTelegramMessage(content, type = 'bill') {
+    const messageObj = createMessageObject(content, type);
+    
+    if (navigator.onLine) {
+        const success = await sendTelegramMessage(messageObj);
+        if (success) {
+            return true;
+        }
+    }
+    savePendingMessage(messageObj);
+    showNotification('Message queued for delivery when online');
+    return false;
+}
+
 window.addEventListener('online', () => {
     showNotification('Network connection restored', 'success');
-    processNetworkQueue();
+    retryPendingMessages();
 });
 
 window.addEventListener('offline', () => {
     showNotification('Network connection lost');
 });
-
-setInterval(() => {
-    if (checkNetworkStatus()) {
-        processNetworkQueue();
-    }
-}, 300000);
 
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
@@ -531,41 +586,55 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 async function retryPendingMessages() {
-    if (!checkNetworkStatus()) return;
-
-    const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
-    if (pendingMessages.length === 0) return;
-
-    const successfulMessages = [];
+    const lastRetry = parseInt(localStorage.getItem(LAST_RETRY_ATTEMPT_KEY) || '0');
+    const now = Date.now();
     
-    for (const message of pendingMessages) {
-        const success = await sendTelegramMessage(message);
+    if (now - lastRetry < MIN_RETRY_INTERVAL) {
+        return;
+    }
+    
+    localStorage.setItem(LAST_RETRY_ATTEMPT_KEY, now.toString());
+    
+    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
+    if (pending.length === 0) return;
+
+    let successCount = 0;
+    
+    for (const messageObj of pending) {
+        if (messageObj.lastAttempt && now - messageObj.lastAttempt < MIN_RETRY_INTERVAL) {
+            continue;
+        }
+        
+        updateMessageAttempt(messageObj.id);
+        const success = await sendTelegramMessage(messageObj);
+        
         if (success) {
-            successfulMessages.push(message);
+            removePendingMessage(messageObj.id);
+            successCount++;
         }
     }
 
-    // Remove successful messages from pending
-    const remainingMessages = pendingMessages.filter(msg => !successfulMessages.includes(msg));
-    localStorage.setItem('pendingMessages', JSON.stringify(remainingMessages));
-
-    if (successfulMessages.length > 0) {
-        showNotification(`Successfully sent ${successfulMessages.length} pending messages`, 'success');
+    if (successCount > 0) {
+        showNotification(`Successfully sent ${successCount} pending messages`, 'success');
     }
 }
 
-function storePendingNotification(billData, messageType = 'new') {
-    const pendingNotifications = JSON.parse(localStorage.getItem('pendingNotifications') || '[]');
-    pendingNotifications.push({
-        id: Date.now(),
-        billData: billData,
-        messageType: messageType, // 'new' for new bills, 'cancel' for cancellations
-        timestamp: new Date().toISOString(),
-        attempts: 0,
-        lastAttempt: null
+function initTelegramRetry() {
+    retryPendingMessages();
+    window.addEventListener('online', () => {
+        showNotification('Network connection restored', 'success');
+        retryPendingMessages();
     });
-    localStorage.setItem('pendingNotifications', JSON.stringify(pendingNotifications));
+    
+    setInterval(retryPendingMessages, 300000);
+    window.addEventListener('beforeunload', () => {
+        if (navigator.onLine) {
+            retryPendingMessages();
+        }
+    });
 }
+
+document.addEventListener('DOMContentLoaded', initTelegramRetry);
 
 function generateBill() {
     if (currentBillItems.length === 0) {
@@ -617,12 +686,7 @@ function generateBill() {
 
     // Send bill details to Telegram
     const telegramMessage = formatBillDetailsForTelegram(bill);
-    if (!checkNetworkStatus()) {
-        storePendingNotification(bill, 'new');
-        showNotification('Bill saved. Notification will be sent when online.');
-    } else {
-        sendTelegramMessage(telegramMessage);
-    }
+    queueTelegramMessage(telegramMessage, 'bill');
 
     // Clear form
     currentBillItems = [];
@@ -664,14 +728,6 @@ function generateBill() {
     alert(`Estimate No. ${billNumber} Generated Successfully!`);
 }
 
-function formatCancellationMessage(bill) {
-    return `❌ *ESTIMATE CANCELLED*\n\n` +
-        `Estimate No: *${bill.billNumber}*\n` +
-        `Customer: ${bill.customer.name}\n` +
-        `Amount: ₹${bill.totalAmount.toFixed(2)}\n` +
-        `Cancelled on: ${new Date().toLocaleString()}`;
-}
-
 function cancelBill(billId) {
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     const billIndex = bills.findIndex(b => b.id === billId);
@@ -681,14 +737,13 @@ function cancelBill(billId) {
         bills[billIndex].cancellationDate = new Date().toISOString();
         localStorage.setItem('bills', JSON.stringify(bills));
 
-        const cancelMessage = formatCancellationMessage(bills[billIndex]);
+        const cancelMessage = `❌ *ESTIMATE CANCELLED*\n\n` +
+            `Estimate No: *${bills[billIndex].billNumber}*\n` +
+            `Customer: ${bills[billIndex].customer.name}\n` +
+            `Amount: ₹${bills[billIndex].totalAmount.toFixed(2)}\n` +
+            `Cancelled on: ${new Date().toLocaleString()}`;
 
-        if (!checkNetworkStatus()) {
-            storePendingNotification(bills[billIndex], 'cancel');
-            showNotification('Cancellation saved. Notification will be sent when online.');
-        } else {
-            sendTelegramMessage(encodeURIComponent(cancelMessage));
-        }
+        sendTelegramMessage(encodeURIComponent(cancelMessage));
 
         const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
         const chatId = '-4708859747';
@@ -717,53 +772,6 @@ function cancelBill(billId) {
         });
 
         generateReport();
-    }
-}
-
-async function processNetworkQueue() {
-    if (!checkNetworkStatus()) return;
-
-    const pendingNotifications = JSON.parse(localStorage.getItem('pendingNotifications') || '[]');
-    if (pendingNotifications.length === 0) return;
-
-    const successfulNotifications = [];
-    const maxAttempts = 3;
-
-    for (const notification of pendingNotifications) {
-        if (notification.attempts >= maxAttempts) {
-            continue;
-        }
-
-        let message;
-        if (notification.messageType === 'new') {
-            message = formatBillDetailsForTelegram(notification.billData);
-        } else if (notification.messageType === 'cancel') {
-            message = formatCancellationMessage(notification.billData);
-        }
-
-        try {
-            const success = await sendTelegramMessage(encodeURIComponent(message));
-            if (success) {
-                successfulNotifications.push(notification.id);
-                showNotification(`Successfully sent notification for bill #${notification.billData.billNumber}`, 'success');
-            } else {
-                notification.attempts += 1;
-                notification.lastAttempt = new Date().toISOString();
-            }
-        } catch (error) {
-            notification.attempts += 1;
-            notification.lastAttempt = new Date().toISOString();
-        }
-    }
-
-    // Remove successful notifications and update remaining ones
-    const remainingNotifications = pendingNotifications.filter(
-        notification => !successfulNotifications.includes(notification.id)
-    );
-    localStorage.setItem('pendingNotifications', JSON.stringify(remainingNotifications));
-
-    if (successfulNotifications.length > 0) {
-        showNotification(`Successfully sent ${successfulNotifications.length} pending notifications`, 'success');
     }
 }
 
@@ -1126,6 +1134,5 @@ function generateReport() {
 window.addEventListener('load', () => {
     loadBrandsList();
     loadProductsList('');
-    generateReport();
-    processNetworkQueue();
+    generateReport(); // Automatically generate report on load
 });
