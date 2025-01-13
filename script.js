@@ -88,6 +88,7 @@ function toggleProductInput() {
     manualPrice.value = '';
 }
 
+// Brand Management
 function addBrand() {
     try {
         const brandName = document.getElementById('brand-name').value.trim();
@@ -98,11 +99,13 @@ function addBrand() {
         const brands = JSON.parse(localStorage.getItem('brands')) || [];
         const newBrand = {
             id: Date.now(),
-            name: brandName
+            name: brandName,
+            description: brandDescription || ''
         };
         brands.push(newBrand);
         localStorage.setItem('brands', JSON.stringify(brands));
         document.getElementById('brand-name').value = '';
+        document.getElementById('brand-description').value = '';
         loadBrandsList();
         alert('Brand added successfully!');
     } catch (error) {
@@ -445,50 +448,6 @@ function checkNetworkStatus() {
     return navigator.onLine;
 }
 
-const PENDING_MESSAGES_KEY = 'pendingTelegramMessages';
-const LAST_RETRY_ATTEMPT_KEY = 'lastTelegramRetryAttempt';
-const BOT_TOKEN = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-const CHAT_ID = '-1001979192306';
-const MIN_RETRY_INTERVAL = 60000;
-
-function createMessageObject(content, type, timestamp = Date.now(), attempts = 0) {
-    return {
-        id: `msg_${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
-        content,
-        type,
-        timestamp,
-        attempts,
-        lastAttempt: null
-    };
-}
-
-function savePendingMessage(messageObj) {
-    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
-    pending.push(messageObj);
-    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(pending));
-}
-
-function removePendingMessage(messageId) {
-    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
-    const updated = pending.filter(msg => msg.id !== messageId);
-    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(pending));
-}
-
-function updateMessageAttempt(messageId) {
-    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
-    const updated = pending.map(msg => {
-        if (msg.id === messageId) {
-            return {
-                ...msg,
-                attempts: msg.attempts + 1,
-                lastAttempt: Date.now()
-            };
-        }
-        return msg;
-    });
-    localStorage.setItem(PENDING_MESSAGES_KEY, JSON.stringify(updated));
-}
-
 // Show notification message
 function showNotification(message, type = 'error') {
     const notification = document.createElement('div');
@@ -516,50 +475,34 @@ function showNotification(message, type = 'error') {
     }, 5000);
 }
 
-async function sendTelegramMessage(messageObj) {
-    if (!navigator.onLine) {
+async function sendTelegramMessage(message) {
+    if (!checkNetworkStatus()) {
+        showNotification('Network Error: Please check your internet connection');
+        const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
+        pendingMessages.push(message);
+        localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
         return false;
     }
 
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const params = {
-        chat_id: CHAT_ID,
-        text: messageObj.content,
-        parse_mode: 'Markdown'
-    };
+    const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
+    const chatId = '-1001979192306';
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=Markdown`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params)
-        });
-
+        const response = await fetch(url);
         const data = await response.json();
-        if (data.ok) {
-            return true;
+        if (!data.ok) {
+            throw new Error('Telegram API Error');
         }
-        throw new Error('Telegram API Error');
+        return true;
     } catch (error) {
-        console.error('Failed to send message:', error);
+        showNotification('Failed to send notification to Telegram. Will retry when connection is restored.');
+        // Store message for retry
+        const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
+        pendingMessages.push(message);
+        localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
         return false;
     }
-}
-
-async function queueTelegramMessage(content, type = 'bill') {
-    const messageObj = createMessageObject(content, type);
-    
-    if (navigator.onLine) {
-        const success = await sendTelegramMessage(messageObj);
-        if (success) {
-            return true;
-        }
-    }
-    savePendingMessage(messageObj);
-    showNotification('Message queued for delivery when online');
-    return false;
 }
 
 window.addEventListener('online', () => {
@@ -586,55 +529,28 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 async function retryPendingMessages() {
-    const lastRetry = parseInt(localStorage.getItem(LAST_RETRY_ATTEMPT_KEY) || '0');
-    const now = Date.now();
-    
-    if (now - lastRetry < MIN_RETRY_INTERVAL) {
-        return;
-    }
-    
-    localStorage.setItem(LAST_RETRY_ATTEMPT_KEY, now.toString());
-    
-    const pending = JSON.parse(localStorage.getItem(PENDING_MESSAGES_KEY) || '[]');
-    if (pending.length === 0) return;
+    if (!checkNetworkStatus()) return;
 
-    let successCount = 0;
+    const pendingMessages = JSON.parse(localStorage.getItem('pendingMessages') || '[]');
+    if (pendingMessages.length === 0) return;
+
+    const successfulMessages = [];
     
-    for (const messageObj of pending) {
-        if (messageObj.lastAttempt && now - messageObj.lastAttempt < MIN_RETRY_INTERVAL) {
-            continue;
-        }
-        
-        updateMessageAttempt(messageObj.id);
-        const success = await sendTelegramMessage(messageObj);
-        
+    for (const message of pendingMessages) {
+        const success = await sendTelegramMessage(message);
         if (success) {
-            removePendingMessage(messageObj.id);
-            successCount++;
+            successfulMessages.push(message);
         }
     }
 
-    if (successCount > 0) {
-        showNotification(`Successfully sent ${successCount} pending messages`, 'success');
+    // Remove successful messages from pending
+    const remainingMessages = pendingMessages.filter(msg => !successfulMessages.includes(msg));
+    localStorage.setItem('pendingMessages', JSON.stringify(remainingMessages));
+
+    if (successfulMessages.length > 0) {
+        showNotification(`Successfully sent ${successfulMessages.length} pending messages`, 'success');
     }
 }
-
-function initTelegramRetry() {
-    retryPendingMessages();
-    window.addEventListener('online', () => {
-        showNotification('Network connection restored', 'success');
-        retryPendingMessages();
-    });
-    
-    setInterval(retryPendingMessages, 300000);
-    window.addEventListener('beforeunload', () => {
-        if (navigator.onLine) {
-            retryPendingMessages();
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', initTelegramRetry);
 
 function generateBill() {
     if (currentBillItems.length === 0) {
@@ -686,7 +602,7 @@ function generateBill() {
 
     // Send bill details to Telegram
     const telegramMessage = formatBillDetailsForTelegram(bill);
-    queueTelegramMessage(telegramMessage, 'bill');
+    sendTelegramMessage(telegramMessage);
 
     // Clear form
     currentBillItems = [];
