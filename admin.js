@@ -178,8 +178,7 @@ function validateStorageData(data) {
         // Validate brands structure
         if (!data.brands.every(brand => 
             typeof brand.id === 'number' && 
-            typeof brand.name === 'string' &&
-            (!brand.description || typeof brand.description === 'string')
+            typeof brand.name === 'string'
         )) {
             return false;
         }
