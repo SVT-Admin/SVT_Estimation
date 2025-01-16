@@ -589,10 +589,10 @@ function clearAllData() {
         sessionStorage.setItem('clearBackup', JSON.stringify(backupBeforeClear));
 
         // Clear all relevant data
-        localStorage.removeItem('brands');
-        localStorage.removeItem('products');
+        // localStorage.removeItem('brands');
+        // localStorage.removeItem('products');
         localStorage.removeItem('bills');
-        localStorage.removeItem('staff');
+        // localStorage.removeItem('staff');
         localStorage.removeItem('currentBillNumber');
 
         alert('All data cleared successfully! The page will now reload.');
