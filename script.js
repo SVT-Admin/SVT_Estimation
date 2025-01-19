@@ -938,18 +938,13 @@ function generateReport() {
     const endDate = document.getElementById('end-date').value;
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
 
-    // Today's summary calculations (only ACTIVE bills)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    // Get filtered bills based on selected date range
+    let filteredBills = getFilteredBills(bills, reportType, startDate, endDate);
+    filteredBills.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    const todayActiveBills = bills.filter(bill => {
-        const billDate = new Date(bill.date);
-        billDate.setHours(0, 0, 0, 0);
-        return billDate.toISOString().split('T')[0] === todayStr && bill.status === 'ACTIVE';
-    });
-
-    const todayTotals = todayActiveBills.reduce((acc, bill) => ({
+    // Calculate summary for filtered ACTIVE bills only
+    const filteredActiveBills = filteredBills.filter(bill => bill.status === 'ACTIVE');
+    const summaryTotals = filteredActiveBills.reduce((acc, bill) => ({
         billCount: acc.billCount + 1,
         totalAmount: acc.totalAmount + (bill.totalAmount || 0),
         subtotal: acc.subtotal + (bill.subtotal || 0),
@@ -960,54 +955,100 @@ function generateReport() {
         transportCharges: 0, extraCharges: 0
     });
 
-    document.getElementById('today-summary').innerHTML = `
-        <h3>Today's Summary (${new Date().toLocaleDateString()})</h3>
-        <p>Total Active Estimates: ${todayTotals.billCount}</p>
-        <p>Subtotal: ₹${todayTotals.subtotal.toFixed(2)}</p>
-        <p>Transport Charges: ₹${(todayTotals.transportCharges || 0).toFixed(2)}</p>
-        <p>Extra Charges: ₹${(todayTotals.extraCharges || 0).toFixed(2)}</p>
-        <p>Total Sales Amount: ₹${todayTotals.totalAmount.toFixed(2)}</p>
+    // Get date range text for summary header
+    const dateRangeText = getDateRangeText(reportType, startDate, endDate);
+
+    // Update summary section with filtered data
+    document.getElementById('full-summary').innerHTML = `
+        <h3>Summary - ${dateRangeText}</h3>
+        <p>Total Active Estimates: ${summaryTotals.billCount}</p>
+        <p>Subtotal: ₹${summaryTotals.subtotal.toFixed(2)}</p>
+        <p>Transport Charges: ₹${(summaryTotals.transportCharges || 0).toFixed(2)}</p>
+        <p>Extra Charges: ₹${(summaryTotals.extraCharges || 0).toFixed(2)}</p>
+        <p>Total Sales Amount: ₹${summaryTotals.totalAmount.toFixed(2)}</p>
     `;
 
-    // Table display (all bills, including cancelled)
-    const reportTableBody = document.getElementById('report-table-body');
-    reportTableBody.innerHTML = '';
+    // Update table display
+    updateReportTable(filteredBills);
+}
 
-    let filteredBills = [];
+function getFilteredBills(bills, reportType, startDate, endDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     switch(reportType) {
         case 'daily':
-            filteredBills = bills.filter(bill => {
+            return bills.filter(bill => {
                 const billDate = new Date(bill.date);
                 billDate.setHours(0, 0, 0, 0);
-                return billDate.toISOString().split('T')[0] === todayStr;
+                return billDate.getTime() === today.getTime();
             });
-            break;
+
         case 'weekly':
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            filteredBills = bills.filter(bill => new Date(bill.date) >= oneWeekAgo);
-            break;
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+            return bills.filter(bill => {
+                const billDate = new Date(bill.date);
+                return billDate >= oneWeekAgo && billDate <= today;
+            });
+
         case 'monthly':
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-            filteredBills = bills.filter(bill => new Date(bill.date) >= oneMonthAgo);
-            break;
+            const oneMonthAgo = new Date(today);
+            oneMonthAgo.setMonth(today.getMonth() - 1);
+            return bills.filter(bill => {
+                const billDate = new Date(bill.date);
+                return billDate >= oneMonthAgo && billDate <= today;
+            });
+
         case 'custom':
             if (startDate && endDate) {
                 const startDateTime = new Date(startDate);
+                startDateTime.setHours(0, 0, 0, 0);
                 const endDateTime = new Date(endDate);
                 endDateTime.setHours(23, 59, 59, 999);
-                filteredBills = bills.filter(bill => {
+                return bills.filter(bill => {
                     const billDate = new Date(bill.date);
                     return billDate >= startDateTime && billDate <= endDateTime;
                 });
             }
-            break;
-        default:
-            filteredBills = bills;
-    }
+            return bills;
 
-    filteredBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+        default:
+            return bills;
+    }
+}
+
+function getDateRangeText(reportType, startDate, endDate) {
+    const today = new Date();
+    
+    switch(reportType) {
+        case 'daily':
+            return `Daily Report (${today.toLocaleDateString()})`;
+            
+        case 'weekly':
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
+            return `Weekly Report (${oneWeekAgo.toLocaleDateString()} - ${today.toLocaleDateString()})`;
+            
+        case 'monthly':
+            const oneMonthAgo = new Date(today);
+            oneMonthAgo.setMonth(today.getMonth() - 1);
+            return `Monthly Report (${oneMonthAgo.toLocaleDateString()} - ${today.toLocaleDateString()})`;
+            
+        case 'custom':
+            if (startDate && endDate) {
+                return `Custom Report (${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()})`;
+            }
+            return 'All Time Report';
+            
+        default:
+            return 'All Time Report';
+    }
+}
+
+function updateReportTable(filteredBills) {
+    const reportTableBody = document.getElementById('report-table-body');
+    reportTableBody.innerHTML = '';
 
     const reportTable = document.getElementById('report-table');
     reportTable.querySelector('thead').innerHTML = `
@@ -1045,6 +1086,18 @@ function generateReport() {
         }
     });
 }
+
+document.getElementById('report-type').addEventListener('change', function() {
+    const customDateInputs = document.querySelectorAll('#start-date, #end-date');
+    customDateInputs.forEach(input => {
+        input.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+    });
+    generateReport();
+});
+
+document.querySelectorAll('#start-date, #end-date').forEach(input => {
+    input.addEventListener('change', generateReport);
+});
 
 // Initialize brands and products list on page load
 window.addEventListener('load', () => {
