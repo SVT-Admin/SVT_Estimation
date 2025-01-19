@@ -279,7 +279,7 @@ async function exportBillsToExcel(fromDate, toDate) {
     try {
         // Telegram configuration
         const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-        const chatId = '1459333234';
+        const chatId = '-1001979192306';
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
 
         // Get all bills
