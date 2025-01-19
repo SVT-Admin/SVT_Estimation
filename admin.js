@@ -243,6 +243,115 @@ function validateLogin() {
     }
 }
 
+function formatDate(date) {
+    return new Date(date).toISOString().split('T')[0];
+}
+
+// Function to format time to HH:MM format
+function formatTime(date) {
+    return new Date(date).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+}
+
+// Set initial dates when page loads
+window.addEventListener('DOMContentLoaded', (event) => {
+    const today = new Date();
+    const formattedDate = formatDate(today);
+    
+    const fromDateInput = document.getElementById('export-from-date');
+    const toDateInput = document.getElementById('export-to-date');
+    
+    if (fromDateInput && toDateInput) {
+        fromDateInput.value = formattedDate;
+        toDateInput.value = formattedDate;
+    }
+});
+
+// Function to export bills to Excel XLSX
+function exportBillsToExcel(fromDate, toDate) {
+    // Get all bills
+    const bills = JSON.parse(localStorage.getItem('bills')) || [];
+    
+    // Filter bills by date range
+    // Add one day to toDate to include the entire day
+    const endDate = new Date(toDate);
+    endDate.setDate(endDate.getDate() + 1);
+    
+    const filteredBills = bills.filter(bill => {
+        const billDate = new Date(bill.date);
+        return billDate >= new Date(fromDate) && billDate < endDate;
+    });
+
+    // Prepare data for Excel
+    const excelData = filteredBills.map(bill => ({
+        'Bill No': bill.billNumber,
+        'Date': formatDate(bill.date),
+        'Time': formatTime(bill.date),
+        'Customer Name': bill.customer?.name || 'N/A',
+        'Mobile': bill.customer?.mobile || 'N/A',
+        'Address': bill.customer?.address || 'N/A',
+        'Staff': bill.staff?.name || 'N/A',
+        'Total Items': bill.items.length,
+        'Subtotal': Number(bill.subtotal.toFixed(2)),
+        'Transport Charge': Number((bill.transportCharges || 0).toFixed(2)),
+        'Extra Charge': Number((bill.extraCharges || 0).toFixed(2)),
+        'Total Amount': Number(bill.totalAmount.toFixed(2)),
+        'Status': bill.status
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Set column widths
+    const colWidths = [
+        { wch: 10 },  // Bill No
+        { wch: 12 },  // Date
+        { wch: 10 },  // Time
+        { wch: 20 },  // Customer Name
+        { wch: 15 },  // Mobile
+        { wch: 30 },  // Address
+        { wch: 15 },  // Staff
+        { wch: 12 },  // Total Items
+        { wch: 12 },  // Subtotal
+        { wch: 15 },  // Transport Charge
+        { wch: 12 },  // Extra Charge
+        { wch: 12 },  // Total Amount
+        { wch: 12 }   // Status
+    ];
+    ws['!cols'] = colWidths;
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bills");
+
+    // Generate Excel file
+    XLSX.writeFile(wb, `bills_${fromDate}_to_${toDate}.xlsx`);
+}
+
+// Function to validate date range
+function validateDateRange(fromDate, toDate) {
+    if (!fromDate || !toDate) {
+        alert('Please select both From Date and To Date');
+        return false;
+    }
+    
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert('From Date cannot be later than To Date');
+        return false;
+    }
+    
+    return true;
+}
+
+// Function to handle export button click
+function handleExportClick() {
+    const fromDate = document.getElementById('export-from-date').value;
+    const toDate = document.getElementById('export-to-date').value;
+    
+    if (validateDateRange(fromDate, toDate)) {
+        exportBillsToExcel(fromDate, toDate);
+    }
+}
+
 function logout() {
     sessionStorage.removeItem('adminLoggedIn');
     window.location.reload();
