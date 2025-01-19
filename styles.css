@@ -238,7 +238,7 @@ th, td {
     text-align: right;
 }
 
-.today-summary {
+.full-summary {
     background-color: #f0f0f0;
     border: 1px solid #ddd;
     padding: 15px;
@@ -246,7 +246,7 @@ th, td {
     border-radius: 5px;
 }
 
-.today-summary h3 {
+.full-summary h3 {
     margin-top: 0;
     color: #333;
     border-bottom: 1px solid #ddd;
@@ -254,7 +254,7 @@ th, td {
     font-size: 18px;
 }
 
-.today-summary p {
+.full-summary p {
     margin: 10px 0;
     display: flex;
     justify-content: space-between;
@@ -292,15 +292,15 @@ th, td {
         padding: 5px;
     }
 
-    .today-summary {
+    .full-summary {
         padding: 10px;
     }
 
-    .today-summary h3 {
+    .full-summary h3 {
         font-size: 16px;
     }
 
-    .today-summary p {
+    .full-summary p {
         flex-direction: column;
         font-size: 12px;
     }
