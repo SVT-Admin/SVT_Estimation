@@ -275,95 +275,117 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 });
 
-function exportBillsToExcel(fromDate, toDate) {
-    // Get all bills
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    
-    // Filter bills by date range
-    const endDate = new Date(toDate);
-    endDate.setDate(endDate.getDate() + 1);
-    
-    const filteredBills = bills.filter(bill => {
-        const billDate = new Date(bill.date);
-        return billDate >= new Date(fromDate) && billDate < endDate;
-    });
+async function exportBillsToExcel(fromDate, toDate) {
+    try {
+        // Telegram configuration
+        const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
+        const chatId = '1459333234';
+        const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
 
-    // Prepare data for Excel
-    const excelData = filteredBills.map(bill => ({
-        'Bill No': bill.billNumber,
-        'Date': formatDate(bill.date),
-        'Time': formatTime(bill.date),
-        'Customer Name': bill.customer?.name || 'N/A',
-        'Mobile': bill.customer?.mobile || 'N/A',
-        'Address': bill.customer?.address || 'N/A',
-        'Staff': bill.staff?.name || 'N/A',
-        'Total Items': bill.items.length,
-        'Subtotal': Number(bill.subtotal.toFixed(2)),
-        'Transport Charge': Number((bill.transportCharges || 0).toFixed(2)),
-        'Extra Charge': Number((bill.extraCharges || 0).toFixed(2)),
-        'Total Amount': Number(bill.totalAmount.toFixed(2)),
-        'Status': bill.status
-    }));
-
-    // Create worksheet
-    const ws = XLSX.utils.json_to_sheet(excelData);
-
-    // Set column widths
-    const colWidths = [
-        { wch: 10 },  // Bill No
-        { wch: 12 },  // Date
-        { wch: 10 },  // Time
-        { wch: 20 },  // Customer Name
-        { wch: 15 },  // Mobile
-        { wch: 30 },  // Address
-        { wch: 15 },  // Staff
-        { wch: 12 },  // Total Items
-        { wch: 12 },  // Subtotal
-        { wch: 15 },  // Transport Charge
-        { wch: 12 },  // Extra Charge
-        { wch: 12 },  // Total Amount
-        { wch: 12 }   // Status
-    ];
-    ws['!cols'] = colWidths;
-
-    // Create workbook
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Bills");
-
-    // Generate filename
-    const fileName = `bills_${fromDate}_to_${toDate}.xlsx`;
-
-    if (isMobileOrTablet()) {
-        // For mobile devices, use different approach
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+        // Get all bills
+        const bills = JSON.parse(localStorage.getItem('bills')) || [];
         
-        // Create download link
-        const downloadLink = document.createElement('a');
-        downloadLink.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
-        downloadLink.download = fileName;
-        downloadLink.style.display = 'none';
+        // Filter bills by date range
+        const endDate = new Date(toDate);
+        endDate.setDate(endDate.getDate() + 1);
         
-        // Append to document, click, and remove
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-    } else {
-        // For desktop, use regular XLSX.writeFile
-        XLSX.writeFile(wb, fileName);
+        const filteredBills = bills.filter(bill => {
+            const billDate = new Date(bill.date);
+            return billDate >= new Date(fromDate) && billDate < endDate;
+        });
+
+        // Prepare data for Excel
+        const excelData = filteredBills.map(bill => ({
+            'Bill No': bill.billNumber,
+            'Date': formatDate(bill.date),
+            'Time': formatTime(bill.date),
+            'Customer Name': bill.customer?.name || 'N/A',
+            'Mobile': bill.customer?.mobile || 'N/A',
+            'Address': bill.customer?.address || 'N/A',
+            'Staff': bill.staff?.name || 'N/A',
+            'Total Items': bill.items.length,
+            'Subtotal': Number(bill.subtotal.toFixed(2)),
+            'Transport Charge': Number((bill.transportCharges || 0).toFixed(2)),
+            'Extra Charge': Number((bill.extraCharges || 0).toFixed(2)),
+            'Total Amount': Number(bill.totalAmount.toFixed(2)),
+            'Status': bill.status
+        }));
+
+        // Create worksheet
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Set column widths
+        const colWidths = [
+            { wch: 10 },  // Bill No
+            { wch: 12 },  // Date
+            { wch: 10 },  // Time
+            { wch: 20 },  // Customer Name
+            { wch: 15 },  // Mobile
+            { wch: 30 },  // Address
+            { wch: 15 },  // Staff
+            { wch: 12 },  // Total Items
+            { wch: 12 },  // Subtotal
+            { wch: 15 },  // Transport Charge
+            { wch: 12 },  // Extra Charge
+            { wch: 12 },  // Total Amount
+            { wch: 12 }   // Status
+        ];
+        ws['!cols'] = colWidths;
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Bills");
+
+        // Generate Excel file as binary string
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+        // Convert binary string to Blob
+        const buf = new ArrayBuffer(wbout.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i < wbout.length; i++) {
+            view[i] = wbout.charCodeAt(i) & 0xFF;
+        }
+        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        // Create FormData and append file
+        const formData = new FormData();
+        formData.append('chat_id', chatId);
+        formData.append('document', blob, `bills_${fromDate}_to_${toDate}.xlsx`);
+
+        // Show loading message
+        alert('Preparing and sending Excel file...');
+
+        // Send to Telegram
+        const response = await fetch(telegramApiUrl, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Telegram API error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.ok) {
+            alert('Excel file sent to Telegram successfully!');
+        } else {
+            throw new Error('Failed to send file to Telegram');
+        }
+
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('There was an error sending the file to Telegram. Please try again.');
     }
 }
 
+// Function to handle export button click
 function handleExportClick() {
     const fromDate = document.getElementById('export-from-date').value;
     const toDate = document.getElementById('export-to-date').value;
     
     if (validateDateRange(fromDate, toDate)) {
-        try {
-            exportBillsToExcel(fromDate, toDate);
-        } catch (error) {
-            console.error('Export error:', error);
-            alert('There was an error exporting the file. Please try again.');
-        }
+        exportBillsToExcel(fromDate, toDate);
     }
 }
 
