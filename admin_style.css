@@ -314,3 +314,49 @@ h4 {
     color: #dc3545;
     font-weight: bold;
 }
+
+/* Add this to admin_style.css */
+
+.export-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.export-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.date-range {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.date-range .form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+    .date-range {
+        flex-direction: column;
+    }
+}
