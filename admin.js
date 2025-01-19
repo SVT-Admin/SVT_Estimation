@@ -243,6 +243,15 @@ function validateLogin() {
     }
 }
 
+function isMobileOrTablet() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function getFileNameDate() {
+    const date = new Date();
+    return date.toISOString().split('T')[0];
+}
+
 function formatDate(date) {
     return new Date(date).toISOString().split('T')[0];
 }
@@ -266,13 +275,11 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 });
 
-// Function to export bills to Excel XLSX
 function exportBillsToExcel(fromDate, toDate) {
     // Get all bills
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     
     // Filter bills by date range
-    // Add one day to toDate to include the entire day
     const endDate = new Date(toDate);
     endDate.setDate(endDate.getDate() + 1);
     
@@ -323,8 +330,41 @@ function exportBillsToExcel(fromDate, toDate) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Bills");
 
-    // Generate Excel file
-    XLSX.writeFile(wb, `bills_${fromDate}_to_${toDate}.xlsx`);
+    // Generate filename
+    const fileName = `bills_${fromDate}_to_${toDate}.xlsx`;
+
+    if (isMobileOrTablet()) {
+        // For mobile devices, use different approach
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+        
+        // Create download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+        downloadLink.download = fileName;
+        downloadLink.style.display = 'none';
+        
+        // Append to document, click, and remove
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    } else {
+        // For desktop, use regular XLSX.writeFile
+        XLSX.writeFile(wb, fileName);
+    }
+}
+
+function handleExportClick() {
+    const fromDate = document.getElementById('export-from-date').value;
+    const toDate = document.getElementById('export-to-date').value;
+    
+    if (validateDateRange(fromDate, toDate)) {
+        try {
+            exportBillsToExcel(fromDate, toDate);
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('There was an error exporting the file. Please try again.');
+        }
+    }
 }
 
 // Function to validate date range
@@ -340,16 +380,6 @@ function validateDateRange(fromDate, toDate) {
     }
     
     return true;
-}
-
-// Function to handle export button click
-function handleExportClick() {
-    const fromDate = document.getElementById('export-from-date').value;
-    const toDate = document.getElementById('export-to-date').value;
-    
-    if (validateDateRange(fromDate, toDate)) {
-        exportBillsToExcel(fromDate, toDate);
-    }
 }
 
 function logout() {
