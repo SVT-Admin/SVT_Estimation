@@ -6,6 +6,7 @@
     <title>Admin Panel - Sri Vinayaga Traders</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="admin_style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <header>
@@ -41,6 +42,24 @@
                     </div>
                     <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
                     <button class="btn btn-primary" onclick="resetBillNumber()">Reset Estimate Number</button>
+                </div>
+                <div class="export-section">
+                    <h3>Export Bills</h3>
+                    <div class="export-controls">
+                        <div class="date-range">
+                            <div class="form-group">
+                                <label for="export-from-date">From Date:</label>
+                                <input type="date" id="export-from-date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="export-to-date">To Date:</label>
+                                <input type="date" id="export-to-date" class="form-control">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="handleExportClick()">
+                            Export to Excel
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
