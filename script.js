@@ -473,6 +473,7 @@ function formatBillDetailsForTelegram(bill) {
     message += `*ITEMS*\n`;
     bill.items.forEach((item, index) => {
         message += `${index + 1}. ${item.brandName} - ${item.productName}\n`;
+        message += `   Count (Units): ${item.units}\n`;
         message += `   Qty: ${item.quantity}KG x ₹${item.price}/KG = ₹${(item.quantity * item.price).toFixed(2)}\n`;
     });
 
