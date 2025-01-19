@@ -530,7 +530,7 @@ async function sendTelegramMessage(message) {
     }
 
     const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-    const chatId = '1459333234';
+    const chatId = '1001979192306';
     const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}&parse_mode=Markdown`;
 
     try {
