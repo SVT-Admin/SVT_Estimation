@@ -9,7 +9,6 @@ window.onload = function() {
     }
 };
 
-// Function to show sections including staff management
 function showSection(section) {
     const dataManagement = document.getElementById('data-management-section');
     const billRecords = document.getElementById('bill-records-section');
@@ -24,14 +23,12 @@ function showSection(section) {
     }
 }
 
-// Initialize staff storage
 function initStaffStorage() {
     if (!localStorage.getItem('staff')) {
         localStorage.setItem('staff', JSON.stringify([]));
     }
 }
 
-// Add new staff
 function addStaff() {
     const name = document.getElementById('staff-name').value.trim();
     const mobile = document.getElementById('staff-mobile').value.trim();
@@ -54,11 +51,9 @@ function addStaff() {
         mobile,
         role
     };
-
     staff.push(newStaff);
     localStorage.setItem('staff', JSON.stringify(staff));
 
-    // Clear form
     document.getElementById('staff-name').value = '';
     document.getElementById('staff-mobile').value = '';
     document.getElementById('staff-role').value = '';
@@ -67,7 +62,6 @@ function addStaff() {
     alert('Staff added successfully!');
 }
 
-// Load staff list
 function loadStaffList() {
     const staff = JSON.parse(localStorage.getItem('staff')) || [];
     const tableBody = document.getElementById('staff-table-body');
@@ -80,9 +74,6 @@ function loadStaffList() {
             <td>${member.mobile}</td>
             <td>${member.role}</td>
             <td>
-                <button class="btn btn-primary" onclick="editStaff(${member.id})">
-                    <i class="icon">✎</i> Edit
-                </button>
                 <button class="btn btn-danger" onclick="deleteStaff(${member.id})">
                     <i class="icon">×</i> Delete
                 </button>
@@ -91,62 +82,9 @@ function loadStaffList() {
     });
 }
 
-// Edit staff
-function editStaff(staffId) {
-    const staff = JSON.parse(localStorage.getItem('staff')) || [];
-    const member = staff.find(s => s.id === staffId);
-    
-    if (!member) return;
-
-    document.getElementById('staff-name').value = member.name;
-    document.getElementById('staff-mobile').value = member.mobile;
-    document.getElementById('staff-role').value = member.role;
-
-    const addButton = document.querySelector('button[onclick="addStaff()"]');
-    addButton.innerHTML = '<i class="icon">✓</i> Update Staff';
-    addButton.onclick = () => updateStaff(staffId);
-}
-
-// Update staff
-function updateStaff(staffId) {
-    const name = document.getElementById('staff-name').value.trim();
-    const mobile = document.getElementById('staff-mobile').value.trim();
-    const role = document.getElementById('staff-role').value.trim();
-
-    if (!name || !mobile || !role) {
-        alert('Please fill in all fields');
-        return;
-    }
-
-    const staff = JSON.parse(localStorage.getItem('staff')) || [];
-    const staffIndex = staff.findIndex(s => s.id === staffId);
-    
-    if (staffIndex === -1) return;
-
-    staff[staffIndex] = {
-        ...staff[staffIndex],
-        name,
-        mobile,
-        role
-    };
-
-    localStorage.setItem('staff', JSON.stringify(staff));
-
-    // Reset form and button
-    document.getElementById('staff-name').value = '';
-    document.getElementById('staff-mobile').value = '';
-    document.getElementById('staff-role').value = '';
-
-    const updateButton = document.querySelector('button[onclick*="updateStaff"]');
-    updateButton.innerHTML = '<i class="icon">+</i> Add Staff';
-    updateButton.onclick = addStaff;
-
-    loadStaffList();
-    alert('Staff updated successfully!');
-}
-
-// Delete staff
 function deleteStaff(staffId) {
+    if (!confirm('Are you sure you want to delete this Staff?')) return;
+
     const staff = JSON.parse(localStorage.getItem('staff')) || [];
     const filteredStaff = staff.filter(s => s.id !== staffId);
     localStorage.setItem('staff', JSON.stringify(filteredStaff));
@@ -154,12 +92,12 @@ function deleteStaff(staffId) {
 }
 
 function resetBillNumber() {
+    if (!confirm('Are you sure you want to reset Bill number to 1?')) return;
+
     localStorage.setItem('currentBillNumber', '1');
     alert('Bill number has been reset to 1');
 }
 
-
-// Show Bill Records by default on page load
 window.onload = function () {
     showSection('bill-records');
 };
@@ -175,7 +113,6 @@ function validateStorageData(data) {
             return false;
         }
         
-        // Validate brands structure
         if (!data.brands.every(brand => 
             typeof brand.id === 'number' && 
             typeof brand.name === 'string'
@@ -183,7 +120,6 @@ function validateStorageData(data) {
             return false;
         }
 
-        // Validate products structure
         if (!data.products.every(product => 
             typeof product.id === 'number' &&
             typeof product.brandId === 'string' &&
@@ -193,7 +129,6 @@ function validateStorageData(data) {
             return false;
         }
 
-        // Validate bills structure
         if (!data.bills.every(bill => 
             typeof bill.id === 'number' &&
             typeof bill.billNumber === 'number' &&
@@ -208,26 +143,6 @@ function validateStorageData(data) {
         return true;
     } catch (error) {
         console.error('Data validation error:', error);
-        return false;
-    }
-}
-
-function safeGetStorageData(key, defaultValue = []) {
-    try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : defaultValue;
-    } catch (error) {
-        console.error(`Error reading ${key} from localStorage:`, error);
-        return defaultValue;
-    }
-}
-
-function safeSetStorageData(key, data) {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-        return true;
-    } catch (error) {
-        console.error(`Error writing ${key} to localStorage:`, error);
         return false;
     }
 }
@@ -277,15 +192,11 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
 async function exportBillsToExcel(fromDate, toDate) {
     try {
-        // Telegram configuration
         const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
         const chatId = '-1001979192306';
         const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
 
-        // Get all bills
         const bills = JSON.parse(localStorage.getItem('bills')) || [];
-        
-        // Filter bills by date range
         const endDate = new Date(toDate);
         endDate.setDate(endDate.getDate() + 1);
         
@@ -294,7 +205,6 @@ async function exportBillsToExcel(fromDate, toDate) {
             return billDate >= new Date(fromDate) && billDate < endDate;
         });
 
-        // Prepare data for Excel
         const excelData = filteredBills.map(bill => ({
             'Bill No': bill.billNumber,
             'Date': formatDate(bill.date),
@@ -311,75 +221,46 @@ async function exportBillsToExcel(fromDate, toDate) {
             'Status': bill.status
         }));
 
-        // Create worksheet
         const ws = XLSX.utils.json_to_sheet(excelData);
-
-        // Set column widths
         const colWidths = [
-            { wch: 10 },  // Bill No
-            { wch: 12 },  // Date
-            { wch: 10 },  // Time
-            { wch: 20 },  // Customer Name
-            { wch: 15 },  // Mobile
-            { wch: 30 },  // Address
-            { wch: 15 },  // Staff
-            { wch: 12 },  // Total Items
-            { wch: 12 },  // Subtotal
-            { wch: 15 },  // Transport Charge
-            { wch: 12 },  // Extra Charge
-            { wch: 12 },  // Total Amount
-            { wch: 12 }   // Status
+            { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, 
+            { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, 
+            { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
         ];
         ws['!cols'] = colWidths;
 
-        // Create workbook
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Bills");
-
-        // Generate Excel file as binary string
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
-
-        // Convert binary string to Blob
         const buf = new ArrayBuffer(wbout.length);
         const view = new Uint8Array(buf);
         for (let i = 0; i < wbout.length; i++) {
             view[i] = wbout.charCodeAt(i) & 0xFF;
         }
         const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-        // Create FormData and append file
         const formData = new FormData();
         formData.append('chat_id', chatId);
         formData.append('document', blob, `bills_${fromDate}_to_${toDate}.xlsx`);
-
-        // Show loading message
         alert('Preparing and sending Excel file...');
-
-        // Send to Telegram
         const response = await fetch(telegramApiUrl, {
             method: 'POST',
             body: formData
         });
-
         if (!response.ok) {
             throw new Error(`Telegram API error: ${response.statusText}`);
         }
-
         const result = await response.json();
-        
         if (result.ok) {
             alert('Excel file sent to Telegram successfully!');
         } else {
             throw new Error('Failed to send file to Telegram');
         }
-
     } catch (error) {
         console.error('Export error:', error);
         alert('There was an error sending the file to Telegram. Please try again.');
     }
 }
 
-// Function to handle export button click
 function handleExportClick() {
     const fromDate = document.getElementById('export-from-date').value;
     const toDate = document.getElementById('export-to-date').value;
@@ -389,7 +270,6 @@ function handleExportClick() {
     }
 }
 
-// Function to validate date range
 function validateDateRange(fromDate, toDate) {
     if (!fromDate || !toDate) {
         alert('Please select both From Date and To Date');
@@ -400,7 +280,6 @@ function validateDateRange(fromDate, toDate) {
         alert('From Date cannot be later than To Date');
         return false;
     }
-    
     return true;
 }
 
@@ -430,9 +309,7 @@ function displayBills(bills) {
         return;
     }
 
-    // Sort bills by date (newest first)
     bills.sort((a, b) => new Date(b.date) - new Date(a.date));
-
     bills.forEach(bill => {
         const rows = createBillElement(bill);
         rows.forEach(row => container.appendChild(row));
@@ -568,6 +445,8 @@ function createBillElement(bill) {
 }
 
 function cancelBill(billId) {
+    if (!confirm('Are you sure you want to cancel this Estimation?')) return;
+
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     const billIndex = bills.findIndex(b => b.id === billId);
     
@@ -625,7 +504,6 @@ function applyFilters() {
 
     let bills = JSON.parse(localStorage.getItem('bills')) || [];
 
-    // Apply date filter
     if (dateFilter) {
         bills = bills.filter(bill => {
             const billDate = new Date(bill.date).toISOString().split('T')[0];
@@ -633,14 +511,12 @@ function applyFilters() {
         });
     }
 
-    // Apply bill number filter
     if (billNumberFilter) {
         bills = bills.filter(bill => 
             bill.billNumber.toString() === billNumberFilter
         );
     }
-
-    // Apply amount filter
+    
     if (amountFilter) {
         bills = bills.filter(bill => {
             const amount = bill.totalAmount;
@@ -656,86 +532,14 @@ function applyFilters() {
             }
         });
     }
-
     displayBills(bills);
 }
 
-async function backupData() {
-    try {
-        const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-        const chatId = '-1001979192306';
-        const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
 
-        const backup = {
-            brands: JSON.parse(localStorage.getItem('brands')) || [],
-            products: JSON.parse(localStorage.getItem('products')) || [],
-            bills: JSON.parse(localStorage.getItem('bills')) || [],
-            staff: JSON.parse(localStorage.getItem('staff')) || [],
-            currentBillNumber: parseInt(localStorage.getItem('currentBillNumber')) || 1,
-            timestamp: new Date().toISOString(),
-            version: '1.0',
-        };
-
-        const backupString = JSON.stringify(backup, null, 2);
-        const backupFile = new Blob([backupString], { type: 'application/json' });
-
-        const formData = new FormData();
-        formData.append('chat_id', chatId);
-        formData.append('document', backupFile, `backup-${new Date().toISOString().split('T')[0]}.json`);
-
-        const response = await fetch(telegramApiUrl, {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error(`Telegram API error: ${response.statusText}`);
-        }
-
-        alert('Backup sent to Telegram successfully!');
-    } catch (error) {
-        console.error('Error sending backup to Telegram:', error);
-        alert('Failed to send backup to Telegram. Please try again.');
-    }
-}
-
-// Improved restore function
-async function restoreData() {
-    const url = 'https://raw.githubusercontent.com/SVT-Admin/SVT_Estimate/refs/heads/main/data.json';
-
-    try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch the file. HTTP status: ${response.status}`);
-        }
-
-        const rawText = await response.text();
-        const backup = JSON.parse(rawText);
-
-        if (!backup.version || !backup.timestamp || !backup.brands || !backup.products || !backup.bills || !backup.staff) {
-            throw new Error('Invalid backup file format.');
-        }
-
-        localStorage.setItem('brands', JSON.stringify(backup.brands));
-        localStorage.setItem('products', JSON.stringify(backup.products));
-        localStorage.setItem('bills', JSON.stringify(backup.bills));
-        localStorage.setItem('staff', JSON.stringify(backup.staff));
-        localStorage.setItem('currentBillNumber', backup.currentBillNumber.toString());
-
-        alert('Data restored successfully! The page will now reload.');
-        window.location.reload();
-        
-    } catch (error) {
-        console.error('Error restoring data:', error);
-        alert('Failed to restore data. Please ensure the backup file is valid and accessible.');
-    }
-}
-
-// Improved clear data function
 function clearAllData() {
+    if (!confirm('Are you sure you want to Clear all Estimation?')) return;
+
     try {
-        // Backup current data before clearing
         const backupBeforeClear = {
             brands: JSON.parse(localStorage.getItem('brands')) || [],
             products: JSON.parse(localStorage.getItem('products')) || [],
@@ -746,23 +550,14 @@ function clearAllData() {
             version: '1.0'
         };
 
-        // Save backup in sessionStorage for recovery in case of errors
         sessionStorage.setItem('clearBackup', JSON.stringify(backupBeforeClear));
-
-        // Clear all relevant data
-        // localStorage.removeItem('brands');
-        // localStorage.removeItem('products');
         localStorage.removeItem('bills');
-        // localStorage.removeItem('staff');
         localStorage.removeItem('currentBillNumber');
-
         alert('All data cleared successfully! The page will now reload.');
         window.location.reload();
     } catch (error) {
         console.error('Clear data failed:', error);
         alert('Failed to clear data. Please try again.');
-
-        // Attempt to recover data from sessionStorage backup
         try {
             const recoveryData = JSON.parse(sessionStorage.getItem('clearBackup'));
             if (recoveryData) {
