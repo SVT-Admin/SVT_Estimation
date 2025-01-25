@@ -15,17 +15,16 @@
     </header>
     <div class="container">
         <nav>
+            <button onclick="showSection('brands')">Brands</button>
             <button onclick="showSection('products')">Products</button>
             <button onclick="showSection('billing')">Estimation</button>
             <button onclick="showSection('reports')">Reports</button>
             <button onclick="window.location.href='admin.html'">Admin</button>
         </nav>
 
-        <!-- Products Section -->
-        <section id="products-section" class="section">
-            <h1 style="text-align: center; padding-bottom: 10px;">PRODUCTS MANAGEMENT</h1>
-            
-            <!-- Brand Management -->
+        <section id="brands-section" class="section">
+            <h1 style="text-align: center; padding-bottom: 10px;">BRANDS MANAGEMENT</h1>
+
             <div class="form-group">
                 <input type="text" id="brand-name" placeholder="Brand Name" required>
                 <button class="btn btn-primary" onclick="addBrand()">
@@ -33,7 +32,25 @@
                 </button>
             </div>
 
-            <!-- Product Management -->
+            <div class="table-responsive">
+                <table id="brands-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Brand Name</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="brands-table-body">
+                        <!-- Brands will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products-section" class="section">
+            <h1 style="text-align: center; padding-bottom: 10px;">PRODUCTS MANAGEMENT</h1>
+            
             <div class="form-group">
                 <select id="product-brand" onchange="filterProductsByBrand()" required>
                     <option value="">Select Brand</option>
