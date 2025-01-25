@@ -35,13 +35,13 @@ function loadStaffDropdown() {
 
 // Navigation
 function showSection(sectionName) {
-    const sections = ['products', 'billing', 'reports'];
+    const sections = ['brands', 'products', 'billing', 'reports'];
     sections.forEach(section => {
         const sectionElement = document.getElementById(`${section}-section`);
         sectionElement.style.display = section === sectionName ? 'block' : 'none';
     });
 
-    // Refresh data when switching sections
+    if (sectionName === 'brands') loadBrandsList();
     if (sectionName === 'products') loadProductsList();
     if (sectionName === 'billing') loadBrandsList();
     if (sectionName === 'reports') generateReport();
@@ -130,33 +130,86 @@ function toggleProductInput() {
     manualPrice.value = '';
 }
 
-// Brand Management
 function addBrand() {
-    try {
-        const brandName = document.getElementById('brand-name').value.trim();
-        if (!brandName) {
-            alert('Please enter a brand name.');
-            return;
-        }
-        const brands = JSON.parse(localStorage.getItem('brands')) || [];
-        const newBrand = {
-            id: Date.now(),
-            name: brandName,
-            description: brandDescription || ''
-        };
-        brands.push(newBrand);
-        localStorage.setItem('brands', JSON.stringify(brands));
-        document.getElementById('brand-name').value = '';
-        document.getElementById('brand-description').value = '';
-        loadBrandsList();
-        alert('Brand added successfully!');
-    } catch (error) {
-        console.error('Error adding brand:', error);
-        alert('Failed to add the brand. Please try again.');
+    const brandNameInput = document.getElementById('brand-name');
+    const brandName = brandNameInput.value.trim();
+    if (!brandName) {
+        alert('Please enter a brand name.');
+        return;
     }
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    const existingBrand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+    if (existingBrand) {
+        alert('This brand already exists!');
+        return;
+    }
+    const newBrand = {
+        id: Date.now(),
+        name: brandName
+    };
+    brands.push(newBrand);
+    localStorage.setItem('brands', JSON.stringify(brands));
+    
+    brandNameInput.value = '';
+    loadBrandsList();
+    alert('Brand added successfully!');
 }
 
-// Product Management
+function editBrand(brandId) {
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    const brand = brands.find(b => b.id === brandId);
+    if (!brand) return;
+    const newBrandName = prompt('Enter new brand name:', brand.name);
+    if (newBrandName === null) return; // User cancelled
+    const trimmedName = newBrandName.trim();
+    if (!trimmedName) {
+        alert('Brand name cannot be empty.');
+        return;
+    }
+    const existingBrand = brands.find(b => 
+        b.name.toLowerCase() === trimmedName.toLowerCase() && b.id !== brandId
+    );
+    if (existingBrand) {
+        alert('A brand with this name already exists!');
+        return;
+    }
+
+    brand.name = trimmedName;
+    const brandIndex = brands.findIndex(b => b.id === brandId);
+    brands[brandIndex] = brand;
+    
+    const products = JSON.parse(localStorage.getItem('products')) || [];
+    const updatedProducts = products.map(product => {
+        if (product.brandId == brandId) {
+            return { ...product };
+        }
+        return product;
+    });
+    
+    localStorage.setItem('brands', JSON.stringify(brands));
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    
+    loadBrandsList();
+    loadProductsList('');
+    alert('Brand updated successfully!');
+}
+
+function deleteBrand(brandId) {
+    if (!confirm('Are you sure you want to delete this brand? This will also delete all associated products.')) return;
+
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    const products = JSON.parse(localStorage.getItem('products')) || [];
+
+    const updatedBrands = brands.filter(b => b.id !== brandId);
+    const updatedProducts = products.filter(p => p.brandId != brandId);
+    localStorage.setItem('brands', JSON.stringify(updatedBrands));
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+
+    loadBrandsList();
+    loadProductsList('');
+    alert('Brand and its associated products deleted successfully!');
+}
+
 function addProduct() {
     const brandSelect = document.getElementById('product-brand');
     const productName = document.getElementById('product-name').value.trim();
@@ -199,9 +252,31 @@ function loadBrandsList() {
                 select.appendChild(option);
             });
         });
+        updateBrandsTable()
     } catch (error) {
         console.error('Error loading brands:', error);
     }
+}
+
+function updateBrandsTable() {
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    const tableBody = document.getElementById('brands-table-body');
+    tableBody.innerHTML = '';
+
+    brands.forEach(brand => {
+        const row = tableBody.insertRow();
+        row.innerHTML = `
+            <td style="text-align: center;">${brand.name}</td>
+            <td style="text-align: center;">
+                <button class="btn btn-secondary" onclick="editBrand(${brand.id})">
+                    <i class="icon">✎</i> Edit
+                </button>
+                <button class="btn btn-danger" onclick="deleteBrand(${brand.id})">
+                    <i class="icon">×</i> Delete
+                </button>
+            </td>
+        `;
+    });
 }
 
 function loadProductsList(filterBrandId = '') {
@@ -241,6 +316,8 @@ function loadProductsList(filterBrandId = '') {
 }
 
 function deleteProduct(productId) {
+    if (!confirm('Are you sure you want to delete this Product?')) return;
+
     const products = JSON.parse(localStorage.getItem('products'));
     const filteredProducts = products.filter(p => p.id != productId);
     localStorage.setItem('products', JSON.stringify(filteredProducts));
@@ -669,6 +746,8 @@ function generateBill() {
 }
 
 function cancelBill(billId) {
+    if (!confirm('Are you sure you want to cancel this Estimation?')) return;
+
     const bills = JSON.parse(localStorage.getItem('bills')) || [];
     const billIndex = bills.findIndex(b => b.id === billId);
     
@@ -853,109 +932,6 @@ function generateProfessionalBillPDF(bill) {
         });
 }
 
-function showBillDetails(bill) {
-    const customerInfo = `
-        <div class="customer-details">
-            <h4>Customer Information</h4>
-            <p><strong>Name:</strong> ${bill.customer?.name || 'N/A'}</p>
-            <p><strong>Mobile:</strong> ${bill.customer?.mobile || 'N/A'}</p>
-            <p><strong>Address:</strong> ${bill.customer?.address || 'N/A'}</p>
-        </div>
-    `;
-
-    const staffInfo = `
-        <div class="staff-details">
-            <h4>Staff Information</h4>
-            <p><strong>Staff:</strong> ${bill.staff?.name || 'N/A'} (${bill.staff?.role || 'N/A'})</p>
-        </div>
-    `;
-
-    const itemsList = bill.items.map(item =>
-        `<tr>
-            <td style="text-align: center;">${item.brandName} - ${item.productName}</td>
-            <td style="text-align: center;">${item.quantity} KG</td>
-            <td style="text-align: center;">${item.units}</td>
-            <td style="text-align: center;">₹${item.price.toFixed(2)}</td>
-            <td style="text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
-        </tr>`
-    ).join('');
-
-    // Adding status information
-    const statusInfo = `
-        <div class="status-container">
-            <p><strong>Status:</strong> 
-                <span class="status-badge ${bill.status.toLowerCase()}">${bill.status}</span>
-                ${bill.status === 'CANCELLED' ? 
-                    `<span class="cancelled-info">(Cancelled on ${new Date(bill.cancellationDate).toLocaleDateString()})</span>` 
-                    : ''}
-            </p>
-        </div>
-    `;
-
-    const detailsHTML = `
-        <div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
-            <h3>Estimate No.: ${bill.billNumber}</h3>
-            <p>Date: ${new Date(bill.date).toLocaleString()}</p>
-            ${statusInfo}
-            ${customerInfo}
-            ${staffInfo}
-            <table style="width: 100%; margin-top: 10px;">
-                <thead>
-                    <tr>
-                        <th style="text-align: center;">Brand/Product</th>
-                        <th style="text-align: center;">Quantity</th>
-                        <th style="text-align: center;">Units</th>
-                        <th style="text-align: center;">Price/KG</th>
-                        <th style="text-align: center;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsList}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
-                        <td style="text-align: center;"><b>₹${bill.subtotal.toFixed(2)}</b></td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" style="text-align: right;"><strong>Transport Charges:</strong></td>
-                        <td style="text-align: center;"><b>₹${(bill.transportCharges || 0).toFixed(2)}</b></td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" style="text-align: right;"><strong>Extra Charges:</strong></td>
-                        <td style="text-align: center;"><b>₹${(bill.extraCharges || 0).toFixed(2)}</b></td>
-                    </tr>
-                    <tr class="total-amount">
-                        <td colspan="4" style="text-align: right;"><strong>Total Amount:</strong></td>
-                        <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
-                    </tr>
-                </tfoot>
-            </table>
-            
-            <!-- Additional Charges Details -->
-            ${(bill.transportCharges || bill.extraCharges) ? `
-                <div class="additional-charges-details" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
-                    <h4 style="margin-bottom: 10px;">Additional Charges Breakdown</h4>
-                    ${bill.transportCharges ? `
-                        <p><strong>Transport Charges:</strong> ₹${bill.transportCharges.toFixed(2)}</p>
-                    ` : ''}
-                    ${bill.extraCharges ? `
-                        <p><strong>Extra Charges:</strong> ₹${bill.extraCharges.toFixed(2)}</p>
-                    ` : ''}
-                </div>
-            ` : ''}
-        </div>
-    `;
-
-    let detailsContainer = document.getElementById('bill-details-container');
-    if (!detailsContainer) {
-        detailsContainer = document.createElement('div');
-        detailsContainer.id = 'bill-details-container';
-        document.getElementById('report-table').parentNode.appendChild(detailsContainer);
-    }
-    detailsContainer.innerHTML = detailsHTML;
-}
-
 function generateReport() {
     const reportType = document.getElementById('report-type').value;
     const startDate = document.getElementById('start-date').value;
@@ -1070,6 +1046,74 @@ function getDateRangeText(reportType, startDate, endDate) {
     }
 }
 
+function getBillDetailsHTML(bill) {
+    return `
+        <h3>Estimate No.: ${bill.billNumber}</h3>
+        <p>Date: ${new Date(bill.date).toLocaleString()}</p>
+        <div class="status-container">
+            <p><strong>Status:</strong> 
+                <span class="status-badge ${bill.status.toLowerCase()}">${bill.status}</span>
+                ${bill.status === 'CANCELLED' ? 
+                    `<span class="cancelled-info">(Cancelled on ${new Date(bill.cancellationDate).toLocaleDateString()})</span>` 
+                    : ''}
+            </p>
+        </div>
+        
+        <div class="customer-details">
+            <h4>Customer Information</h4>
+            <p><strong>Name:</strong> ${bill.customer?.name || 'N/A'}</p>
+            <p><strong>Mobile:</strong> ${bill.customer?.mobile || 'N/A'}</p>
+            <p><strong>Address:</strong> ${bill.customer?.address || 'N/A'}</p>
+        </div>
+
+        <div class="staff-details">
+            <h4>Staff Information</h4>
+            <p><strong>Staff:</strong> ${bill.staff?.name || 'N/A'} (${bill.staff?.role || 'N/A'})</p>
+        </div>
+
+        <table style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th style="text-align: center;">Brand/Product</th>
+                    <th style="text-align: center;">Quantity</th>
+                    <th style="text-align: center;">Units</th>
+                    <th style="text-align: center;">Price/KG</th>
+                    <th style="text-align: center;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${bill.items.map(item => `
+                    <tr>
+                        <td style="text-align: center;">${item.brandName} - ${item.productName}</td>
+                        <td style="text-align: center;">${item.quantity} KG</td>
+                        <td style="text-align: center;">${item.units}</td>
+                        <td style="text-align: center;">₹${item.price.toFixed(2)}</td>
+                        <td style="text-align: center;">₹${(item.quantity * item.price).toFixed(2)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
+                    <td style="text-align: center;"><b>₹${bill.subtotal.toFixed(2)}</b></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="text-align: right;"><strong>Transport Charges:</strong></td>
+                    <td style="text-align: center;"><b>₹${(bill.transportCharges || 0).toFixed(2)}</b></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="text-align: right;"><strong>Extra Charges:</strong></td>
+                    <td style="text-align: center;"><b>₹${(bill.extraCharges || 0).toFixed(2)}</b></td>
+                </tr>
+                <tr class="total-amount">
+                    <td colspan="4" style="text-align: right;"><strong>Total Amount:</strong></td>
+                    <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+}
+
 function updateReportTable(filteredBills) {
     const reportTableBody = document.getElementById('report-table-body');
     reportTableBody.innerHTML = '';
@@ -1104,9 +1148,33 @@ function updateReportTable(filteredBills) {
             </td>
         `;
         
-        const cells = row.getElementsByTagName('td');
-        for (let i = 0; i < cells.length - 1; i++) {
-            cells[i].onclick = () => showBillDetails(bill);
+        const detailsCells = row.getElementsByTagName('td');
+        for (let i = 0; i < detailsCells.length - 1; i++) {
+            detailsCells[i].onclick = () => {
+                // Remove any existing expanded details rows
+                const existingDetailsRow = reportTableBody.querySelector('.bill-details-row');
+                if (existingDetailsRow) {
+                    if (existingDetailsRow.dataset.billId === bill.id.toString()) {
+                        // If clicking the same bill, remove the details
+                        existingDetailsRow.remove();
+                        return;
+                    }
+                    existingDetailsRow.remove();
+                }
+
+                // Create a new row for bill details
+                const detailsRow = reportTableBody.insertRow(row.rowIndex);
+                detailsRow.classList.add('bill-details-row');
+                detailsRow.dataset.billId = bill.id;
+                
+                const detailsCell = detailsRow.insertCell();
+                detailsCell.colSpan = 4;
+                detailsCell.innerHTML = `
+                    <div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
+                        ${getBillDetailsHTML(bill)}
+                    </div>
+                `;
+            };
         }
     });
 }
