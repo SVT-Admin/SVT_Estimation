@@ -278,6 +278,9 @@ function createBrandSearchComponent() {
     const container = document.createElement('div');
     container.classList.add('brand-search-container');
     container.style.position = 'relative';
+    container.style.width = '100%'; // Make container full width
+    container.style.maxWidth = '100%'; // Ensure it doesn't exceed screen width
+    container.style.boxSizing = 'border-box'; // Include padding in width calculation
     
     // Create the input element
     const input = document.createElement('input');
@@ -286,6 +289,8 @@ function createBrandSearchComponent() {
     input.classList.add('form-control');
     input.placeholder = 'Type to search brands...';
     input.autocomplete = 'off';
+    input.style.width = '100%'; // Make input full width of container
+    input.style.boxSizing = 'border-box'; // Include padding in width calculation
     
     // Create the dropdown
     const dropdown = document.createElement('div');
@@ -301,6 +306,7 @@ function createBrandSearchComponent() {
     dropdown.style.borderRadius = '0 0 4px 4px';
     dropdown.style.zIndex = '1000';
     dropdown.style.top = '100%';
+    dropdown.style.left = '0'; // Ensure dropdown aligns with left edge
     
     // Append elements
     container.appendChild(input);
