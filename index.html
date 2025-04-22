@@ -19,6 +19,7 @@
             <button onclick="showSection('products')">Products</button>
             <button onclick="showSection('billing')">Estimation</button>
             <button onclick="showSection('reports')">Reports</button>
+            <button onclick="showSection('download')">Download</button>
             <button onclick="window.location.href='admin.html'">Admin</button>
         </nav>
 
@@ -45,6 +46,18 @@
                     </tbody>
                 </table>
             </div>
+        </section>
+
+        <section id="download-section" class="section" style="display:none;">
+            <h1 style="text-align: center; padding-bottom: 10px;">DOWNLOAD ESTIMATE</h1>
+            
+            <div class="form-group" style="max-width: 500px; margin: 0 auto;">
+                <input type="number" id="download-bill-number" placeholder="Enter Estimate No." required>
+                <button class="btn btn-primary" onclick="downloadBillByNumber()">
+                    <i class="icon">⬇</i> Download
+                </button>
+            </div>
+            <div id="download-message" class="message-area" style="text-align: center; margin-top: 20px;"></div>
         </section>
 
         <!-- Products Section -->
