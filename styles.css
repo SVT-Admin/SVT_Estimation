@@ -481,3 +481,30 @@ button:active {
         font-size: 16px;
     }
 }
+
+
+@media screen and (max-width: 768px) {
+    .input-group {
+        display: flex;
+        flex-direction: row; /* Keep items in a row */
+        align-items: center;
+        width: 100%;
+    }
+    
+    .input-group select,
+    .input-group input {
+        flex: 1; /* Takes up available space */
+        min-width: 0; /* Allows flex items to shrink below content size */
+    }
+    
+    .input-group button {
+        width: auto; /* Don't make button full width */
+        flex-shrink: 0; /* Prevent button from shrinking */
+        margin-left: 5px; /* Add some space between input and button */
+    }
+    
+    /* Optional: Make form-group still column, but keep input groups as rows */
+    .form-group {
+        flex-direction: column;
+    }
+}
