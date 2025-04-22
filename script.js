@@ -33,9 +33,8 @@ function loadStaffDropdown() {
     });
 }
 
-// Navigation
 function showSection(sectionName) {
-    const sections = ['brands', 'products', 'billing', 'reports'];
+    const sections = ['brands', 'products', 'billing', 'reports', 'download'];
     sections.forEach(section => {
         const sectionElement = document.getElementById(`${section}-section`);
         sectionElement.style.display = section === sectionName ? 'block' : 'none';
@@ -84,7 +83,6 @@ async function checkAndSendPendingMessages() {
     }
 }
 
-// Show the Billing section by default on page load
 window.onload = function() {
     initStorage();
     loadStaffDropdown();
@@ -93,26 +91,40 @@ window.onload = function() {
     loadProductsList('');
     generateReport();
     checkAndSendPendingMessages();
+    
+    // Add the brand search component
+    setTimeout(replaceBrandDropdown, 100);
+    
+    // Add event listener for toggle brand input
+    const toggleBrandBtn = document.getElementById('toggle-brand-btn');
+    if (toggleBrandBtn) {
+        toggleBrandBtn.addEventListener('click', toggleBrandInput);
+    }
 };
 
 let isManualBrand = false;
 let isManualProduct = false;
 
 function toggleBrandInput() {
-    const selectElement = document.getElementById('billing-brand');
-    const manualInput = document.getElementById('billing-brand-manual');
     isManualBrand = !isManualBrand;
     
-    selectElement.style.display = isManualBrand ? 'none' : 'block';
-    manualInput.style.display = isManualBrand ? 'block' : 'none';
+    const brandSearchContainer = document.querySelector('.brand-search-container');
+    const manualInput = document.getElementById('billing-brand-manual');
     
-    // Clear values when switching
-    selectElement.value = '';
-    manualInput.value = '';
-    
-    // Update product list if switching back to dropdown
-    if (!isManualBrand) {
-        updateProductList();
+    if (brandSearchContainer && manualInput) {
+        brandSearchContainer.style.display = isManualBrand ? 'none' : 'block';
+        manualInput.style.display = isManualBrand ? 'block' : 'none';
+        
+        // Clear values when switching
+        if (isManualBrand) {
+            manualInput.value = '';
+        } else {
+            const brandSearchInput = document.getElementById('brand-search-input');
+            if (brandSearchInput) {
+                brandSearchInput.value = '';
+                brandSearchInput.dataset.brandId = '';
+            }
+        }
     }
 }
 
@@ -237,6 +249,9 @@ function addProduct() {
 function loadBrandsList() {
     try {
         const brands = JSON.parse(localStorage.getItem('brands')) || [];
+        // Sort brands alphabetically
+        brands.sort((a, b) => a.name.localeCompare(b.name));
+        
         const brandSelects = [
             document.getElementById('product-brand'),
             document.getElementById('billing-brand')
@@ -252,14 +267,145 @@ function loadBrandsList() {
                 select.appendChild(option);
             });
         });
-        updateBrandsTable()
+        updateBrandsTable();
     } catch (error) {
         console.error('Error loading brands:', error);
     }
 }
 
+function createBrandSearchComponent() {
+    // Create the container
+    const container = document.createElement('div');
+    container.classList.add('brand-search-container');
+    container.style.position = 'relative';
+    
+    // Create the input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'brand-search-input';
+    input.classList.add('form-control');
+    input.placeholder = 'Type to search brands...';
+    input.autocomplete = 'off';
+    
+    // Create the dropdown
+    const dropdown = document.createElement('div');
+    dropdown.id = 'brand-search-dropdown';
+    dropdown.classList.add('brand-search-dropdown');
+    dropdown.style.display = 'none';
+    dropdown.style.position = 'absolute';
+    dropdown.style.width = '100%';
+    dropdown.style.maxHeight = '200px';
+    dropdown.style.overflowY = 'auto';
+    dropdown.style.backgroundColor = 'white';
+    dropdown.style.border = '1px solid #ced4da';
+    dropdown.style.borderRadius = '0 0 4px 4px';
+    dropdown.style.zIndex = '1000';
+    dropdown.style.top = '100%';
+    
+    // Append elements
+    container.appendChild(input);
+    container.appendChild(dropdown);
+    
+    // Add event listeners
+    input.addEventListener('input', function() {
+        filterBrands(this.value);
+    });
+    
+    input.addEventListener('focus', function() {
+        if (dropdown.children.length > 0) {
+            dropdown.style.display = 'block';
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+    
+    return container;
+}
+
+function filterBrands(searchText) {
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    const dropdown = document.getElementById('brand-search-dropdown');
+    
+    // Clear previous results
+    dropdown.innerHTML = '';
+    
+    // Sort brands alphabetically
+    brands.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Filter brands based on search text
+    const filteredBrands = searchText 
+        ? brands.filter(brand => brand.name.toLowerCase().includes(searchText.toLowerCase())) 
+        : brands;
+    
+    if (filteredBrands.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+    }
+    
+    // Add filtered brands to dropdown
+    filteredBrands.forEach(brand => {
+        const item = document.createElement('div');
+        item.classList.add('brand-search-item');
+        item.style.padding = '8px 12px';
+        item.style.cursor = 'pointer';
+        item.style.borderBottom = '1px solid #e9ecef';
+        item.textContent = brand.name;
+        
+        item.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        
+        item.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'white';
+        });
+        
+        item.addEventListener('click', function() {
+            selectBrand(brand.id, brand.name);
+            dropdown.style.display = 'none';
+        });
+        
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = 'block';
+}
+
+function selectBrand(brandId, brandName) {
+    const input = document.getElementById('brand-search-input');
+    input.value = brandName;
+    input.dataset.brandId = brandId;
+    
+    // Update product dropdown based on selected brand
+    updateProductList(brandId);
+}
+
+// Replace the old dropdown-based brand selection
+function replaceBrandDropdown() {
+    const oldBrandSelect = document.getElementById('billing-brand');
+    
+    if (!oldBrandSelect) return;
+    
+    const parentElement = oldBrandSelect.parentElement;
+    const searchComponent = createBrandSearchComponent();
+    
+    // Replace the old dropdown with the new search component
+    parentElement.replaceChild(searchComponent, oldBrandSelect);
+    
+    // Load initial brands
+    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    brands.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function updateBrandsTable() {
     const brands = JSON.parse(localStorage.getItem('brands')) || [];
+    // Sort brands alphabetically by name
+    brands.sort((a, b) => a.name.localeCompare(b.name));
+    
     const tableBody = document.getElementById('brands-table-body');
     tableBody.innerHTML = '';
 
@@ -278,6 +424,7 @@ function updateBrandsTable() {
         `;
     });
 }
+
 
 function loadProductsList(filterBrandId = '') {
     const products = JSON.parse(localStorage.getItem('products'));
@@ -327,10 +474,9 @@ function deleteProduct(productId) {
 }
 
 // Billing Section
-function updateProductList() {
-    const brandId = document.getElementById('billing-brand').value;
+function updateProductList(brandId) {
     const productSelect = document.getElementById('billing-product');
-    const products = JSON.parse(localStorage.getItem('products'));
+    const products = JSON.parse(localStorage.getItem('products')) || [];
 
     productSelect.innerHTML = '<option value="">Select Product</option>';
     products.filter(p => p.brandId == brandId).forEach(product => {
@@ -402,17 +548,19 @@ function addProductToBill() {
         }
         brandId = brand.id;
     } else {
-        const brandSelect = document.getElementById('billing-brand');
-        if (!brandSelect.value) {
+        // Get brand from the search input
+        const brandSearchInput = document.getElementById('brand-search-input');
+        if (!brandSearchInput.dataset.brandId) {
             alert('Please select a brand');
             return;
         }
-        brandId = brandSelect.value;
-        const brands = JSON.parse(localStorage.getItem('brands'));
+        brandId = brandSearchInput.dataset.brandId;
+        const brands = JSON.parse(localStorage.getItem('brands')) || [];
         const brand = brands.find(b => b.id == brandId);
         brandName = brand.name;
     }
 
+    // Rest of the function remains the same...
     // Handle product selection/entry
     if (isManualProduct) {
         productName = document.getElementById('billing-product-manual').value.trim();
@@ -458,8 +606,7 @@ function addProductToBill() {
     currentBillItems.push(billItem);
     updateBillItemsTable();
     loadBrandsList();
-    updateProductList();
-
+    
     // Clear inputs
     document.getElementById('billing-quantity').value = '';
     document.getElementById('billing-units').value = '';
@@ -469,6 +616,12 @@ function addProductToBill() {
     }
     if (isManualBrand) {
         document.getElementById('billing-brand-manual').value = '';
+    } else {
+        const brandSearchInput = document.getElementById('brand-search-input');
+        if (brandSearchInput) {
+            brandSearchInput.value = '';
+            brandSearchInput.dataset.brandId = '';
+        }
     }
 }
 
@@ -716,32 +869,6 @@ function generateBill() {
 
     updateBillItemsTable();
 
-    const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-    const chatId = '1459333234';
-    const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
-
-    const backup = {
-        brands: JSON.parse(localStorage.getItem('brands')) || [],
-        products: JSON.parse(localStorage.getItem('products')) || [],
-        bills: JSON.parse(localStorage.getItem('bills')) || [],
-        staff: JSON.parse(localStorage.getItem('staff')) || [],
-        currentBillNumber: parseInt(localStorage.getItem('currentBillNumber')) || 1,
-        timestamp: new Date().toISOString(),
-        version: '1.0',
-    };
-
-    const backupString = JSON.stringify(backup, null, 2);
-    const backupFile = new Blob([backupString], { type: 'application/json' });
-
-    const formData = new FormData();
-    formData.append('chat_id', chatId);
-    formData.append('document', backupFile, `backup-${new Date().toISOString().split('T')[0]}.json`);
-
-    fetch(telegramApiUrl, {
-        method: 'POST',
-        body: formData,
-    });
-
     alert(`Estimate No. ${billNumber} Generated Successfully!`);
 }
 
@@ -763,32 +890,6 @@ function cancelBill(billId) {
             `Cancelled on: ${new Date().toLocaleString()}`;
 
         sendTelegramMessage(encodeURIComponent(cancelMessage));
-
-        const botToken = '6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No';
-        const chatId = '1459333234';
-        const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
-
-        const backup = {
-            brands: JSON.parse(localStorage.getItem('brands')) || [],
-            products: JSON.parse(localStorage.getItem('products')) || [],
-            bills: JSON.parse(localStorage.getItem('bills')) || [],
-            staff: JSON.parse(localStorage.getItem('staff')) || [],
-            currentBillNumber: parseInt(localStorage.getItem('currentBillNumber')) || 1,
-            timestamp: new Date().toISOString(),
-            version: '1.0',
-        };
-
-        const backupString = JSON.stringify(backup, null, 2);
-        const backupFile = new Blob([backupString], { type: 'application/json' });
-
-        const formData = new FormData();
-        formData.append('chat_id', chatId);
-        formData.append('document', backupFile, `backup-${new Date().toISOString().split('T')[0]}.json`);
-
-        fetch(telegramApiUrl, {
-            method: 'POST',
-            body: formData,
-        });
 
         generateReport();
     }
@@ -1114,6 +1215,35 @@ function getBillDetailsHTML(bill) {
     `;
 }
 
+function downloadBillByNumber() {
+    const billNumber = parseInt(document.getElementById('download-bill-number').value);
+    if (!billNumber) {
+        showDownloadMessage('Please enter a valid estimate number', 'error');
+        return;
+    }
+    
+    const bills = JSON.parse(localStorage.getItem('bills')) || [];
+    const bill = bills.find(b => b.billNumber === billNumber);
+    
+    if (!bill) {
+        showDownloadMessage('Estimate not found', 'error');
+        return;
+    }
+    
+    generateProfessionalBillPDF(bill);
+    showDownloadMessage('Downloading estimate...', 'success');
+}
+
+function showDownloadMessage(message, type = 'error') {
+    const messageArea = document.getElementById('download-message');
+    messageArea.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    
+    // Clear message after 3 seconds
+    setTimeout(() => {
+        messageArea.innerHTML = '';
+    }, 3000);
+}
+
 function updateReportTable(filteredBills) {
     const reportTableBody = document.getElementById('report-table-body');
     reportTableBody.innerHTML = '';
@@ -1122,6 +1252,7 @@ function updateReportTable(filteredBills) {
     reportTable.querySelector('thead').innerHTML = `
         <tr>
             <th style="text-align: center;">Bill Number</th>
+            <th style="text-align: center;">Customer Name</th>
             <th style="text-align: center;">Total Amount</th>
             <th style="text-align: center;">Status</th>
             <th style="text-align: center;">Action</th>
@@ -1135,6 +1266,7 @@ function updateReportTable(filteredBills) {
         row.className = statusClass;
         row.innerHTML = `
             <td style="text-align: center;"><b>${bill.billNumber}</b></td>
+            <td style="text-align: center;"><b>${bill.customer?.name || 'N/A'}</b></td>
             <td style="text-align: center;"><b>₹${bill.totalAmount.toFixed(2)}</b></td>
             <td style="text-align: center;"><span class="status-badge ${bill.status.toLowerCase()}">${bill.status}</span></td>
             <td style="text-align: center;">
@@ -1142,9 +1274,6 @@ function updateReportTable(filteredBills) {
                     `<button class="btn btn-danger" onclick="cancelBill(${bill.id})">Cancel</button>` : 
                     `<span class="cancelled-date">Cancelled on ${new Date(bill.cancellationDate).toLocaleDateString()}</span>`
                 }
-                <button class="btn btn-primary" onclick="generateProfessionalBillPDF(${JSON.stringify(bill).replace(/"/g, '&quot;')})">
-                    Download
-                </button>
             </td>
         `;
         
@@ -1168,7 +1297,7 @@ function updateReportTable(filteredBills) {
                 detailsRow.dataset.billId = bill.id;
                 
                 const detailsCell = detailsRow.insertCell();
-                detailsCell.colSpan = 4;
+                detailsCell.colSpan = 5; // Update column span to match the total number of columns
                 detailsCell.innerHTML = `
                     <div style="margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px;">
                         ${getBillDetailsHTML(bill)}
