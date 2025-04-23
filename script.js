@@ -333,6 +333,72 @@ function createBrandSearchComponent() {
     return container;
 }
 
+function searchBills() {
+    const searchTerm = document.getElementById('download-bill-number').value.trim();
+    const resultsContainer = document.getElementById('bill-search-results');
+    const bills = JSON.parse(localStorage.getItem('bills')) || [];
+    
+    // Clear previous results
+    resultsContainer.innerHTML = '';
+    
+    if (!searchTerm) {
+        showDownloadMessage('Please enter a bill number to search', 'error');
+        return;
+    }
+    
+    // Find matching bills - search as you type approach (partial matches)
+    const matchingBills = bills.filter(bill => 
+        bill.billNumber.toString().includes(searchTerm)
+    );
+    
+    if (matchingBills.length === 0) {
+        resultsContainer.innerHTML = '<div class="alert alert-warning">No matching bills found</div>';
+        return;
+    }
+    
+    // Sort by most recent first
+    matchingBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Create table to display results
+    const table = document.createElement('table');
+    table.className = 'table table-bordered mt-3';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th style="text-align: center;">Bill No</th>
+                <th style="text-align: center;">Date</th>
+                <th style="text-align: center;">Customer</th>
+                <th style="text-align: center;">Amount</th>
+                <th style="text-align: center;">Status</th>
+                <th style="text-align: center;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${matchingBills.map(bill => `
+                <tr ${bill.status === 'CANCELLED' ? 'class="cancelled-bill"' : ''}>
+                    <td style="text-align: center;">${bill.billNumber}</td>
+                    <td style="text-align: center;">${new Date(bill.date).toLocaleDateString()}</td>
+                    <td style="text-align: center;">${bill.customer?.name || 'N/A'}</td>
+                    <td style="text-align: center;">₹${bill.totalAmount.toFixed(2)}</td>
+                    <td style="text-align: center;">
+                        <span class="status-badge ${bill.status.toLowerCase()}">${bill.status}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-primary btn-sm" onclick="generateProfessionalBillPDF(${JSON.stringify(bill).replace(/"/g, '&quot;')})">
+                            <i class="icon">↓</i> Download
+                        </button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    
+    resultsContainer.appendChild(table);
+    showDownloadMessage(`Found ${matchingBills.length} matching bills`, 'success');
+}
+
+
+
 function filterBrands(searchText) {
     const brands = JSON.parse(localStorage.getItem('brands')) || [];
     const dropdown = document.getElementById('brand-search-dropdown');
@@ -1222,22 +1288,7 @@ function getBillDetailsHTML(bill) {
 }
 
 function downloadBillByNumber() {
-    const billNumber = parseInt(document.getElementById('download-bill-number').value);
-    if (!billNumber) {
-        showDownloadMessage('Please enter a valid estimate number', 'error');
-        return;
-    }
-    
-    const bills = JSON.parse(localStorage.getItem('bills')) || [];
-    const bill = bills.find(b => b.billNumber === billNumber);
-    
-    if (!bill) {
-        showDownloadMessage('Estimate not found', 'error');
-        return;
-    }
-    
-    generateProfessionalBillPDF(bill);
-    showDownloadMessage('Downloading estimate...', 'success');
+    searchBills();
 }
 
 function showDownloadMessage(message, type = 'error') {
