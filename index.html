@@ -54,8 +54,11 @@
             <div class="form-group" style="max-width: 500px; margin: 0 auto;">
                 <input type="number" id="download-bill-number" placeholder="Enter Estimate No." required>
                 <button class="btn btn-primary" onclick="downloadBillByNumber()">
-                    <i class="icon">⬇</i> Download
+                    Search
                 </button>
+                <div id="bill-search-results" class="mt-3">
+                    <!-- Search results will appear here -->
+                </div>
             </div>
             <div id="download-message" class="message-area" style="text-align: center; margin-top: 20px;"></div>
         </section>
