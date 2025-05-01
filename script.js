@@ -253,8 +253,7 @@ function loadBrandsList() {
         brands.sort((a, b) => a.name.localeCompare(b.name));
         
         const brandSelects = [
-            document.getElementById('product-brand'),
-            document.getElementById('billing-brand')
+            document.getElementById('product-brand')
         ];
 
         // Clear existing options
