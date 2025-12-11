@@ -148,23 +148,5 @@
     </div>
 
     <script src="admin.js"></script>
-    <script>
-        // Add this to your main page's script
-        function saveDbState() {
-            if (db) {
-                const data = db.export();
-                const array = new Uint8Array(data);
-                sessionStorage.setItem('database', JSON.stringify(Array.from(array)));
-            }
-        }
-
-        function clearQueuedMessages() {
-            // Implementation for clearing queued messages
-        }
-
-        function deleteBillsByDateRange() {
-            // Implementation for deleting bills by date range
-        }
-    </script>
 </body>
 </html>
