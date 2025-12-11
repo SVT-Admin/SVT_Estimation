@@ -604,22 +604,32 @@ function clearFilters() {
 }
 
 function clearQueuedMessages() {
-  const pendingMessages = JSON.parse(localStorage.getItem("pendingMessages") || "[]")
+  const pendingMessages = JSON.parse(localStorage.getItem("pendingMessages")) || []
 
   if (pendingMessages.length === 0) {
     alert("No queued messages to clear.")
     return
   }
 
-  if (
-    !confirm(
-      `Are you sure you want to clear ${pendingMessages.length} queued message(s) for retry? This action cannot be undone.`,
-    )
-  )
+  if (!confirm(`Are you sure you want to clear ${pendingMessages.length} queued message(s)?`)) {
     return
+  }
 
   localStorage.removeItem("pendingMessages")
-  alert(`Successfully cleared ${pendingMessages.length} queued message(s).`)
+  alert(`${pendingMessages.length} queued message(s) cleared successfully!`)
+
+  // Send backup to Telegram
+  const botToken = "6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No"
+  const chatId = "-4708859747"
+  const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`
+
+  const message = `🗑️ Admin cleared ${pendingMessages.length} queued messages at ${new Date().toLocaleString()}`
+
+  fetch(telegramApiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text: message }),
+  }).catch((err) => console.error("Telegram notification failed:", err))
 }
 
 function updateDeleteBillsCount() {
@@ -632,36 +642,23 @@ function updateDeleteBillsCount() {
     return
   }
 
-  if (new Date(fromDate) > new Date(toDate)) {
-    countElement.textContent = "Error: From Date cannot be later than To Date"
-    countElement.style.color = "#721c24"
-    return
-  }
-
   const bills = JSON.parse(localStorage.getItem("bills")) || []
   const endDate = new Date(toDate)
   endDate.setDate(endDate.getDate() + 1)
 
-  const billsToDelete = bills.filter((bill) => {
+  const billsInRange = bills.filter((bill) => {
     const billDate = new Date(bill.date)
     return billDate >= new Date(fromDate) && billDate < endDate
   })
 
-  countElement.textContent = `${billsToDelete.length} bill(s) will be deleted from ${fromDate} to ${toDate}`
-  countElement.style.color = "#856404"
+  countElement.textContent = `Found ${billsInRange.length} bill(s) in this date range`
 }
 
 function deleteBillsByDateRange() {
   const fromDate = document.getElementById("delete-from-date").value
   const toDate = document.getElementById("delete-to-date").value
 
-  if (!fromDate || !toDate) {
-    alert("Please select both From Date and To Date")
-    return
-  }
-
-  if (new Date(fromDate) > new Date(toDate)) {
-    alert("From Date cannot be later than To Date")
+  if (!validateDateRange(fromDate, toDate)) {
     return
   }
 
@@ -669,65 +666,58 @@ function deleteBillsByDateRange() {
   const endDate = new Date(toDate)
   endDate.setDate(endDate.getDate() + 1)
 
-  const billsToDelete = bills.filter((bill) => {
+  const billsInRange = bills.filter((bill) => {
     const billDate = new Date(bill.date)
     return billDate >= new Date(fromDate) && billDate < endDate
   })
 
-  if (billsToDelete.length === 0) {
+  if (billsInRange.length === 0) {
     alert("No bills found in the selected date range.")
     return
   }
 
-  const billNumbers = billsToDelete.map((b) => b.billNumber).join(", ")
-
-  if (
-    !confirm(
-      `Delete ${billsToDelete.length} bill(s) from ${fromDate} to ${toDate}?\n\nBill Numbers: ${billNumbers}\n\nThis action cannot be undone!`,
-    )
-  ) {
+  if (!confirm(`Are you sure you want to delete ${billsInRange.length} bill(s) from ${fromDate} to ${toDate}?`)) {
     return
   }
 
-  try {
-    const remainingBills = bills.filter((bill) => {
-      const billDate = new Date(bill.date)
-      return !(billDate >= new Date(fromDate) && billDate < endDate)
-    })
-
-    localStorage.setItem("bills", JSON.stringify(remainingBills))
-
-    const backup = {
-      brands: JSON.parse(localStorage.getItem("brands")) || [],
-      products: JSON.parse(localStorage.getItem("products")) || [],
-      bills: JSON.parse(localStorage.getItem("bills")) || [],
-      staff: JSON.parse(localStorage.getItem("staff")) || [],
-      currentBillNumber: Number.parseInt(localStorage.getItem("currentBillNumber")) || 1,
-      timestamp: new Date().toISOString(),
-      version: "1.0",
-      deletedBills: billsToDelete,
-    }
-
-    const backupString = JSON.stringify(backup, null, 2)
-    const backupFile = new Blob([backupString], { type: "application/json" })
-    const formData = new FormData()
-    formData.append("chat_id", "-4708859747")
-    formData.append("document", backupFile, `backup-${new Date().toISOString().split("T")[0]}.json`)
-
-    const botToken = "6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No"
-    fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
-      method: "POST",
-      body: formData,
-    })
-
-    document.getElementById("delete-from-date").value = ""
-    document.getElementById("delete-to-date").value = ""
-    document.getElementById("delete-bills-count").textContent = ""
-
-    alert(`Successfully deleted ${billsToDelete.length} bill(s) from the date range ${fromDate} to ${toDate}`)
-    loadBills()
-  } catch (error) {
-    console.error("Error deleting bills:", error)
-    alert("Error deleting bills. Please try again.")
+  // Create backup before deletion
+  const backupData = {
+    deletedBills: billsInRange,
+    dateRange: `${fromDate} to ${toDate}`,
+    deletedAt: new Date().toISOString(),
+    totalDeleted: billsInRange.length,
   }
+
+  // Filter out bills in the date range
+  const remainingBills = bills.filter((bill) => {
+    const billDate = new Date(bill.date)
+    return !(billDate >= new Date(fromDate) && billDate < endDate)
+  })
+
+  localStorage.setItem("bills", JSON.stringify(remainingBills))
+
+  // Send backup to Telegram
+  const botToken = "6330850455:AAEr7XSfLqodb1Pl3srqU_9yYnErANni9No"
+  const chatId = "-1001979192306"
+  const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendDocument`
+
+  const backupString = JSON.stringify(backupData, null, 2)
+  const backupFile = new Blob([backupString], { type: "application/json" })
+
+  const formData = new FormData()
+  formData.append("chat_id", chatId)
+  formData.append("document", backupFile, `deleted-bills-${fromDate}-to-${toDate}.json`)
+
+  fetch(telegramApiUrl, {
+    method: "POST",
+    body: formData,
+  }).catch((err) => console.error("Telegram backup failed:", err))
+
+  // Clear form and reload
+  document.getElementById("delete-from-date").value = ""
+  document.getElementById("delete-to-date").value = ""
+  document.getElementById("delete-bills-count").textContent = ""
+
+  alert(`${billsInRange.length} bill(s) deleted successfully and backed up to Telegram!`)
+  loadBills()
 }
