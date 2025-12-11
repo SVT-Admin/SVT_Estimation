@@ -38,26 +38,7 @@
                 <div class="button-group">
                     <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
                     <button class="btn btn-primary" onclick="resetBillNumber()">Reset Estimate Number</button>
-                    <button class="btn btn-warning" onclick="clearQueuedMessages()">Clear Queued Messages</button>
                 </div>
-
-                <!-- Added date range filter to delete bills by date -->
-                <div class="delete-bills-section" style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border-radius: 5px;">
-                    <h4 style="color: #856404;">Delete Bills by Date Range</h4>
-                    <div class="date-range" style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 15px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="delete-from-date">From Date:</label>
-                            <input type="date" id="delete-from-date" class="form-control">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="delete-to-date">To Date:</label>
-                            <input type="date" id="delete-to-date" class="form-control">
-                        </div>
-                        <button class="btn btn-danger" onclick="deleteBillsByDateRange()" style="height: 40px;">Delete Bills</button>
-                    </div>
-                    <p id="delete-bills-count" style="margin: 0; color: #856404; font-size: 14px;"></p>
-                </div>
-
                 <div class="export-section">
                     <h3>Export Bills</h3>
                     <div class="export-controls">
@@ -148,5 +129,15 @@
     </div>
 
     <script src="admin.js"></script>
+    <script>
+        // Add this to your main page's script
+        function saveDbState() {
+            if (db) {
+                const data = db.export();
+                const array = new Uint8Array(data);
+                sessionStorage.setItem('database', JSON.stringify(Array.from(array)));
+            }
+        }
+    </script>
 </body>
 </html>
